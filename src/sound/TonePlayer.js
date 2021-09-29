@@ -23,6 +23,11 @@ import { SoundPlayer } from "./SoundPlayer.js";
  * @param {string|number} [options.note= 'C4'] - note (if string) or frequency (if number)
  * @param {number} [options.volume= 1.0] - volume of the tone (must be between 0 and 1.0)
  * @param {number} [options.loops= 0] - how many times to repeat the tone after it has played once. If loops == -1, the tone will repeat indefinitely until stopped.
+ * @param {string} [options.wave= 'square']
+ * @param {number} [options.envelop.attack= 0.001]
+ * @param {number} [options.envelop.decay= 0.001]
+ * @param {number} [options.envelop.sustain= 1]
+ * @param {number} [options.envelop.release= 0.001]
  */
 export class TonePlayer extends SoundPlayer
 {
@@ -34,6 +39,13 @@ export class TonePlayer extends SoundPlayer
 		loops = 0,
 		soundLibrary = TonePlayer.SoundLibrary.TONE_JS,
 		autoLog = true,
+		wave = "square",
+		envelope = {
+			attack: 0.001,
+			decay: 0.001,
+			sustain: 1,
+			release: 0.001,
+		}
 	} = {})
 	{
 		super(psychoJS);
@@ -44,9 +56,11 @@ export class TonePlayer extends SoundPlayer
 		this._addAttribute("loops", loops);
 		this._addAttribute("soundLibrary", soundLibrary);
 		this._addAttribute("autoLog", autoLog);
+		this._addAttribute("wave", wave);
+		this._addAttribute("envelope", envelope);
 
 		// initialise the sound library:
-		this._initSoundLibrary();
+		this._initSoundLibrary(wave, envelope);
 
 		// Tone.js Loop:
 		this._toneLoop = null;
@@ -81,6 +95,8 @@ export class TonePlayer extends SoundPlayer
 				duration_s: sound.secs,
 				volume: sound.volume,
 				loops: sound.loops,
+				wave: sound.wave,
+				envelope: sound.envelope,
 			});
 		}
 
@@ -106,6 +122,8 @@ export class TonePlayer extends SoundPlayer
 					duration_s: sound.secs,
 					volume: sound.volume,
 					loops: sound.loops,
+					wave: sound.wave,
+					envelope: sound.envelope,
 				});
 			}
 		}
@@ -288,8 +306,10 @@ export class TonePlayer extends SoundPlayer
 	 * @name module:sound.TonePlayer._initSoundLibrary
 	 * @function
 	 * @protected
+	 * @param {string} wave
+	 * @param {object} envelope
 	 */
-	_initSoundLibrary()
+	_initSoundLibrary(wave, envelope)
 	{
 		const response = {
 			origin: "TonePlayer._initSoundLibrary",
@@ -320,14 +340,9 @@ export class TonePlayer extends SoundPlayer
 			// create a synth: we use a triangular oscillator with hardly any envelope:
 			this._synthOtions = {
 				oscillator: {
-					type: "square", // 'triangle'
+					type: wave,
 				},
-				envelope: {
-					attack: 0.001, // 1ms
-					decay: 0.001, // 1ms
-					sustain: 1,
-					release: 0.001, // 1ms
-				},
+				envelope: envelope,
 			};
 			this._synth = new Tone.Synth(this._synthOtions);
 
