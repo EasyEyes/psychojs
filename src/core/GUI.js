@@ -111,7 +111,8 @@ export class GUI
 				}
 
 				// prepare jquery UI dialog box:
-				let htmlCode = '<div id="expDialog" title="' + title + '">';
+				// let htmlCode = '<div id="expDialog" title="' + title + '">';
+				let htmlCode = `<div id="expDialog" title="Welcome to EasyEyes ${title}.">`;
 
 				// uncomment for older version of the library:
 				// htmlCode += '<p style="font-size: 0.8em; padding: 0.5em; margin-bottom: 0.5em; color: #FFAA00; border: 1px solid #FFAA00;">&#9888; This experiment uses a deprecated version of the PsychoJS library. Consider updating to a newer version (e.g. by updating PsychoPy and re-exporting the experiment).</p>'+
@@ -152,7 +153,7 @@ export class GUI
 
 					if (!inUrl)
 					{
-						htmlCode += '<label for="' + keyId + '">' + key + "</label>";
+						htmlCode += '<label for="' + keyId + '">' + upperFirst(key) + "</label>";
 
 						// if the field is required:
 						if (key.slice(-1) === "*")
@@ -190,10 +191,10 @@ export class GUI
 					}
 				});
 
-				if (this._requiredKeys.length > 0)
-				{
-					htmlCode += '<p class="validateTips">Fields marked with an asterisk (*) are required.</p>';
-				}
+				// if (this._requiredKeys.length > 0)
+				// {
+				// 	htmlCode += '<p class="validateTips">Fields marked with an asterisk (*) are required.</p>';
+				// }
 
 				// add a progress bar:
 				htmlCode += '<hr><div id="progressMsg" class="progress">' + self._progressMsg + "</div>";
@@ -488,7 +489,7 @@ export class GUI
 		else if (signal.message === ServerManager.Event.DOWNLOAD_COMPLETED)
 		{
 			this._allResourcesDownloaded = true;
-			jQuery("#progressMsg").text("all resources downloaded.");
+			jQuery("#progressMsg").text("All resources downloaded.");
 			this._updateOkButtonStatus();
 		}
 		// update progress bar:
@@ -505,11 +506,11 @@ export class GUI
 
 			if (signal.message === ServerManager.Event.RESOURCE_DOWNLOADED)
 			{
-				jQuery("#progressMsg").text("downloaded " + (this._progressBarCurrentValue / 2) + " / " + (this._progressBarMax / 2));
+				jQuery("#progressMsg").text("Downloaded " + (this._progressBarCurrentValue / 2) + " / " + (this._progressBarMax / 2));
 			}
 			else
 			{
-				jQuery("#progressMsg").text("downloading " + (this._progressBarCurrentValue / 2) + " / " + (this._progressBarMax / 2));
+				jQuery("#progressMsg").text("Downloading " + (this._progressBarCurrentValue / 2) + " / " + (this._progressBarMax / 2));
 			}
 			// $("#progressMsg").text(signal.resource + ': downloaded.');
 			jQuery("#progressbar").progressbar("option", "value", this._progressBarCurrentValue);
@@ -723,3 +724,9 @@ GUI.dialogMaxSize = [500, 600];
  * @public
  */
 GUI.dialogMargin = [50, 50];
+
+
+function upperFirst(s)
+{
+	return s[0].toUpperCase() + s.slice(1);
+}

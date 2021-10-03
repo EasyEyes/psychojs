@@ -515,7 +515,7 @@ export class PsychoJS
 			}
 
 			// thank participant for waiting and either quit or redirect:
-			let text = "Thank you for your patience.<br/><br/>";
+			let text = "Thank you.<br/><br/>";
 			text += (typeof message !== "undefined") ? message : "Goodbye!";
 			const self = this;
 			this._gui.dialog({

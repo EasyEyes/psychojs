@@ -64,6 +64,11 @@ a:hover {
   top: auto !important;
 }
 
+.ui-dialog .ui-dialog-titlebar {
+  font-weight: normal;
+  color: #fff;
+}
+
 /* Don't display close button in the top right corner of the box */
 .ui-dialog.no-close .ui-dialog-titlebar-close {
   display: none;
