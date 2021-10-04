@@ -93,7 +93,7 @@ a:hover {
 
 /* Initialisation message (which will disappear behind the canvas) */
 #root::after {
-  content: "initialising the experiment...";
+  content: "Initializing the experiment ...";
   left: 50%;
   position: fixed;
   top: 50%;
