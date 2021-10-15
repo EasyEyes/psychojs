@@ -72,10 +72,10 @@ export class GUI
 		text,
 		dictionary,
 		title,
-		participantText,
-    sessionText,
-    cancelText,
-    okText,
+		participantText = "Participant",
+		sessionText = "Session",
+		cancelText = "Cancel",
+		okText = "OK",
 	})
 	{
 		// get info from URL:
