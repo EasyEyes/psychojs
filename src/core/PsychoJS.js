@@ -515,7 +515,7 @@ export class PsychoJS
 			}
 
 			// thank participant for waiting and either quit or redirect:
-			let text = "Thank you.<br/><br/>";
+			let text = "Thank you.<br/>";
 			text += (typeof message !== "undefined") ? `${message}<br/><br/>` : "Goodbye!<br/><br/>";
 			text += "Please leave your comment at <a href=\"https://forms.gle/WCcm4yPTus2KgieS8\" target=\"_blank\" rel=\"noopener noreferrer\" >https://forms.gle/WCcm4yPTus2KgieS8</a> to help us improve it.";
 			const self = this;

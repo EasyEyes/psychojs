@@ -71,6 +71,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			clipMask,
 			autoDraw,
 			autoLog,
+			isInstruction = false,
 		} = {},
 	)
 	{
@@ -89,6 +90,9 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 				}
 			};
 		};
+
+		// Instruction text
+		this._isInstruction = isInstruction || false
 
 		// text and font:
 		this._addAttribute(
@@ -365,7 +369,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			align: this._alignHoriz,
 			wordWrap: (typeof this._wrapWidth !== "undefined"),
 			wordWrapWidth: (typeof this._wrapWidth !== "undefined") ? this._getHorLengthPix(this._wrapWidth) : 0,
-			breakWords: true,
+			breakWords: this._isInstruction,
 		});
 	}
 
