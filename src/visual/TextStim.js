@@ -365,6 +365,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			align: this._alignHoriz,
 			wordWrap: (typeof this._wrapWidth !== "undefined"),
 			wordWrapWidth: (typeof this._wrapWidth !== "undefined") ? this._getHorLengthPix(this._wrapWidth) : 0,
+			breakWords: true,
 		});
 	}
 
