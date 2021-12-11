@@ -190,6 +190,10 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	{
 		if (typeof this._textMetrics === "undefined")
 		{
+			PIXI.TextMetrics.BASELINE_MULTIPLIER = 4; // 1.4 // 8
+			PIXI.TextMetrics.HEIGHT_MULTIPLIER = 6; // 2 // 12
+			PIXI.TextMetrics.BASELINE_SYMBOL = 'M';
+			// PIXI.TextMetrics.METRICS_STRING = '|ÉqÅjg.?y';
 			this._textMetrics = PIXI.TextMetrics.measureText(this._text, this._getTextStyle());
 
 			// since PIXI.TextMetrics does not give us the actual bounding box of the text
