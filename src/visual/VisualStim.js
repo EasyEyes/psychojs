@@ -112,6 +112,12 @@ export class VisualStim extends util.mix(MinimalStim).with(WindowMixin)
 	 */
 	setSize(size, log = false)
 	{
+		// Threshold: Remove warning for TextStim
+		if (this.constructor.name === "TextStim")
+		{
+			return;
+		}
+
 		// size is either undefined, null, or a tuple of numbers:
 		if (typeof size !== "undefined" && size !== null)
 		{
