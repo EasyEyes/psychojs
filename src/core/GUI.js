@@ -189,7 +189,7 @@ export class GUI
 						/*if (typeof value === 'string')*/
 						else
 						{
-							htmlCode += '<input type="text" name="' + key + '" id="' + keyId;
+							htmlCode += '<input readonly disabled type="text" name="' + key + '" id="' + keyId;
 							htmlCode += '" value="' + value + '" class="text ui-widget-content ui-corner-all">';
 						}
 					}
@@ -218,6 +218,31 @@ export class GUI
 					}
 				});
 
+				// Tackle browser demands on having user action initiate audio context
+				Tone.start();
+
+				const onOkClicked = () =>
+				{
+					// update dictionary:
+					Object.keys(dictionary).forEach((key, keyIdx) =>
+					{
+						const input = document.getElementById("form-input-" + keyIdx);
+						if (input)
+						{
+							dictionary[key] = input.value;
+						}
+					});
+
+					self._dialogComponent.button = "OK";
+					jQuery("#expDialog").dialog("close");
+
+					// switch to full screen if requested:
+					self._psychoJS.window.adjustScreenSize();
+
+					// Clear events (and keypresses) accumulated during the dialog
+					self._psychoJS.eventManager.clearEvents();
+				}
+
 				// init and open the dialog box:
 				self._dialogComponent.button = "Cancel";
 				jQuery("#expDialog").dialog({
@@ -242,30 +267,7 @@ export class GUI
 						{
 							id: "buttonOk",
 							text: okText,
-							click: function()
-							{
-								// update dictionary:
-								Object.keys(dictionary).forEach((key, keyIdx) =>
-								{
-									const input = document.getElementById("form-input-" + keyIdx);
-									if (input)
-									{
-										dictionary[key] = input.value;
-									}
-								});
-
-								self._dialogComponent.button = "OK";
-								jQuery("#expDialog").dialog("close");
-
-								// Tackle browser demands on having user action initiate audio context
-								Tone.start();
-
-								// switch to full screen if requested:
-								self._psychoJS.window.adjustScreenSize();
-
-								// Clear events (and keypresses) accumulated during the dialog
-								self._psychoJS.eventManager.clearEvents();
-							},
+							click: onOkClicked,
 						},
 					],
 
@@ -301,6 +303,11 @@ export class GUI
 				return Scheduler.Event.FLIP_REPEAT;
 			}
 		};
+	}
+
+	_removeWelcomeDialogBox()
+	{
+		jQuery("#expDialog").dialog("destroy").remove();
 	}
 
 	/**
