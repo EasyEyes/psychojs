@@ -190,7 +190,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	{
 		if (typeof this._textMetrics === "undefined")
 		{
-			// PIXI.TextMetrics.BASELINE_MULTIPLIER = 8;// 8 // 1.4
+			PIXI.TextMetrics.BASELINE_MULTIPLIER = 8;// 8 // 1.4
 			PIXI.TextMetrics.HEIGHT_MULTIPLIER = 12; // 12 // 2 
 			// PIXI.TextMetrics.BASELINE_SYMBOL = 'M';
 			// PIXI.TextMetrics.METRICS_STRING = '|ÉqÅjg.?y';
