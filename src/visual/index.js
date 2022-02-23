@@ -2,7 +2,7 @@
 // export * from "./Form.js";
 // export * from "./ImageStim.js";
 // export * from "./MovieStim.js";
-// export * from "./Polygon.js";
+export * from "./Polygon.js";
 export * from "./Rect.js";
 export * from "./ShapeStim.js";
 // export * from "./Slider.js";
