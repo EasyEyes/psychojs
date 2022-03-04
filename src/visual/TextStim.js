@@ -499,6 +499,17 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 
 		return anchor;
 	}
+
+	scaleToHeightPx(h)
+	{
+		this.setHeight(h)
+		this.refresh()
+		this._updateIfNeeded()
+		const measured = this.getBoundingBox(true).height
+		const s = h/measured
+		this.setHeight(s*h)
+	}
+
 }
 
 /**
