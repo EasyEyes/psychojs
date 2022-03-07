@@ -1073,7 +1073,8 @@ export class ServerManager extends PsychObject
 			// warn the user if the resource does not have any extension:
 			if (typeof extension === "undefined")
 			{
-				this.psychoJS.logger.warn(`"${name}" does not appear to have an extension, which may negatively impact its loading. We highly recommend you add an extension.`);
+				console.warn(`${name} [no extension]`);
+				// this.psychoJS.logger.warn(`"${name}" does not appear to have an extension, which may negatively impact its loading. We highly recommend you add an extension.`);
 			}
 
 			const pathStatusData = this._resources.get(name);
