@@ -518,6 +518,16 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		const measured = this.getBoundingBox(true).width;
 		const s = h / measured;
 		this.setHeight(s * w);
+
+		/* Alg of same name, by Gus. I belive they both work.
+			scaleToWidthPx(w)
+			{
+				const bb = this.getBoundingBox(true)
+				const hToW = bb.height / bb.width
+				const nominalHeight = hToW * w
+				this.scaleToHeightPx(nominalHeight)
+			}
+		*/
 	}
 }
 
