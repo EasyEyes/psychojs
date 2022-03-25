@@ -347,6 +347,12 @@ export class GUI
 		{
 			this._psychoJS.logger.fatal(util.toString(error));
 
+			// let extraMessageFromEasyEyes = "";
+			// if (window.errorHandler)
+			// {
+			// 	extraMessageFromEasyEyes = window.errorHandler(error);
+			// }
+
 			// deal with null error:
 			if (!error)
 			{
@@ -395,11 +401,16 @@ export class GUI
 				htmlCode = '<div id="msgDialog" title="Error">';
 				htmlCode += '<p class="validateTips">Unfortunately we encountered the following error:</p>';
 				htmlCode += stackCode;
-				htmlCode += "<p>Try to run the experiment again. If the error persists, contact the experiment designer.</p>";
+				htmlCode += "<p>The error has been recorded and we will work on fixing it soon. We will close the experiment now ...</p>";
 				htmlCode += "</div>";
 
 				titleColour = "red";
 			}
+
+			// if (extraMessageFromEasyEyes.length)
+			// {
+			// 	htmlCode += `<p>${extraMessageFromEasyEyes}</p>`;
+			// }
 		}
 		// we are displaying a message:
 		else if (typeof message !== "undefined")
@@ -612,7 +623,7 @@ export class GUI
 			case 1:
 				return {
 					htmlCode:
-						'<div id="msgDialog" title="Error"><p>Oops we encountered an internal server error.</p><p>Try to run the experiment again. If the error persists, contact the experiment designer.</p></div>',
+						'<div id="msgDialog" title="Error"><p>Oops we encountered an internal server error.</p><p>The error has been recorded and we will work on fixing it soon. We will close the experiment now ...</p></div>',
 					titleColour: "red",
 				};
 
@@ -621,7 +632,7 @@ export class GUI
 			case 2:
 				return {
 					htmlCode:
-						'<div id="msgDialog" title="Error"><p>Oops we encountered a database error.</p><p>Try to run the experiment again. If the error persists, contact the experiment designer.</p></div>',
+						'<div id="msgDialog" title="Error"><p>Oops we encountered a database error.</p><p>The error has been recorded and we will work on fixing it soon. We will close the experiment now ...</p></div>',
 					titleColour: "red",
 				};
 
@@ -709,7 +720,7 @@ export class GUI
 			default:
 				return {
 					htmlCode:
-						`<div id="msgDialog" title="Error"><p>Unfortunately we encountered an unspecified error (error code: ${errorCode}.</p><p>Try to run the experiment again. If the error persists, contact the experiment designer.</p></div>`,
+						`<div id="msgDialog" title="Error"><p>Unfortunately we encountered an unspecified error (error code: ${errorCode}.</p><p>The error has been recorded and we will work on fixing it soon.  We will close the experiment now ...</p></div>`,
 					titleColour: "red",
 				};
 		}

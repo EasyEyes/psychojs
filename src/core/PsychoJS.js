@@ -703,41 +703,42 @@ export class PsychoJS
 		this.logger.debug("capturing all errors and showing them in a pop up window");
 
 		const self = this;
-		window.onerror = function(message, source, lineno, colno, error)
-		{
-			console.error(error);
+		// window.onerror = function(message, source, lineno, colno, error)
+		// {
+		// 	console.error(error);
 
-			document.body.setAttribute(
-				"data-error",
-				JSON.stringify({
-					message: message,
-					source: source,
-					lineno: lineno,
-					colno: colno,
-					error: error,
-				}),
-			);
+		// 	document.body.setAttribute(
+		// 		"data-error",
+		// 		JSON.stringify({
+		// 			message: message,
+		// 			source: source,
+		// 			lineno: lineno,
+		// 			colno: colno,
+		// 			error: error,
+		// 		}),
+		// 	);
 
-			self._gui.dialog({ "error": error });
+		// 	self._gui.dialog({ "error": error });
 
-			return true;
-		};
-		window.onunhandledrejection = function(error)
-		{
-			console.error(error?.reason);
-			if (error?.reason?.stack === undefined)
-			{
-				// No stack? Error thrown by PsychoJS; stringify whole error
-				document.body.setAttribute("data-error", JSON.stringify(error?.reason));
-			}
-			else
-			{
-				// Yes stack? Error thrown by JS; stringify stack
-				document.body.setAttribute("data-error", JSON.stringify(error?.reason?.stack));
-			}
-			self._gui.dialog({ error: error?.reason });
-			return true;
-		};
+		// 	return true;
+		// };
+
+		// window.onunhandledrejection = function(error)
+		// {
+		// 	console.error(error?.reason);
+		// 	if (error?.reason?.stack === undefined)
+		// 	{
+		// 		// No stack? Error thrown by PsychoJS; stringify whole error
+		// 		document.body.setAttribute("data-error", JSON.stringify(error?.reason));
+		// 	}
+		// 	else
+		// 	{
+		// 		// Yes stack? Error thrown by JS; stringify stack
+		// 		document.body.setAttribute("data-error", JSON.stringify(error?.reason?.stack));
+		// 	}
+		// 	self._gui.dialog({ error: error?.reason });
+		// 	return true;
+		// };
 	}
 
 	/**
