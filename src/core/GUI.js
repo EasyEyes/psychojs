@@ -401,7 +401,7 @@ export class GUI
 				htmlCode = '<div id="msgDialog" title="Error">';
 				htmlCode += '<p class="validateTips">Unfortunately we encountered the following error:</p>';
 				htmlCode += stackCode;
-				htmlCode += "<p>The error has been recorded and we will work on fixing it soon. We will close the experiment now ...</p>";
+				htmlCode += "<p>The error has been recorded and we will work on fixing it soon. Click OK to close the experiment.</p>";
 				htmlCode += "</div>";
 
 				titleColour = "red";
@@ -448,7 +448,7 @@ export class GUI
 
 			buttons: (!showOK) ? [] : [{
 				id: "buttonOk",
-				text: "Ok",
+				text: "OK",
 				click: function()
 				{
 					jQuery(this).dialog("destroy").remove();
@@ -623,7 +623,7 @@ export class GUI
 			case 1:
 				return {
 					htmlCode:
-						'<div id="msgDialog" title="Error"><p>Oops we encountered an internal server error.</p><p>The error has been recorded and we will work on fixing it soon. We will close the experiment now ...</p></div>',
+						'<div id="msgDialog" title="Error"><p>Oops we encountered an internal server error.</p><p>The error has been recorded and we will work on fixing it soon. Click OK to close the experiment.</p></div>',
 					titleColour: "red",
 				};
 
@@ -632,7 +632,7 @@ export class GUI
 			case 2:
 				return {
 					htmlCode:
-						'<div id="msgDialog" title="Error"><p>Oops we encountered a database error.</p><p>The error has been recorded and we will work on fixing it soon. We will close the experiment now ...</p></div>',
+						'<div id="msgDialog" title="Error"><p>Oops we encountered a database error.</p><p>The error has been recorded and we will work on fixing it soon. Click OK to close the experiment.</p></div>',
 					titleColour: "red",
 				};
 
@@ -720,7 +720,7 @@ export class GUI
 			default:
 				return {
 					htmlCode:
-						`<div id="msgDialog" title="Error"><p>Unfortunately we encountered an unspecified error (error code: ${errorCode}.</p><p>The error has been recorded and we will work on fixing it soon.  We will close the experiment now ...</p></div>`,
+						`<div id="msgDialog" title="Error"><p>Unfortunately we encountered an unspecified error (error code: ${errorCode}.</p><p>The error has been recorded and we will work on fixing it soon.  Click OK to close the experiment.</p></div>`,
 					titleColour: "red",
 				};
 		}
