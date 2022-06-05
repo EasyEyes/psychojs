@@ -334,6 +334,7 @@ export class GUI
 		error,
 		showOK = true,
 		onOK,
+		okText = "OK",
 	} = {})
 	{
 		// close the previously opened dialog box, if there is one:
@@ -401,7 +402,7 @@ export class GUI
 				htmlCode = '<div id="msgDialog" title="Error">';
 				htmlCode += '<p class="validateTips">Unfortunately we encountered the following error:</p>';
 				htmlCode += stackCode;
-				htmlCode += "<p>The error has been recorded and we will work on fixing it soon. Click OK to close the experiment.</p>";
+				htmlCode += `<p class="psychojs-alert-text">Click the REPORT button to report the error to EasyEyes team. We will work on fixing it soon. Thank you for your help.</p>`;
 				htmlCode += "</div>";
 
 				titleColour = "red";
@@ -448,7 +449,7 @@ export class GUI
 
 			buttons: (!showOK) ? [] : [{
 				id: "buttonOk",
-				text: "OK",
+				text: okText,
 				click: function()
 				{
 					jQuery(this).dialog("destroy").remove();
@@ -623,7 +624,7 @@ export class GUI
 			case 1:
 				return {
 					htmlCode:
-						'<div id="msgDialog" title="Error"><p>Oops we encountered an internal server error.</p><p>The error has been recorded and we will work on fixing it soon. Click OK to close the experiment.</p></div>',
+						'<div id="msgDialog" title="Error"><p>Oops we encountered an internal server error.</p><p class="psychojs-alert-text">Click the REPORT button to report the error to EasyEyes team. We will work on fixing it soon. Thank you for your help.</p></div>',
 					titleColour: "red",
 				};
 
@@ -632,7 +633,7 @@ export class GUI
 			case 2:
 				return {
 					htmlCode:
-						'<div id="msgDialog" title="Error"><p>Oops we encountered a database error.</p><p>The error has been recorded and we will work on fixing it soon. Click OK to close the experiment.</p></div>',
+						'<div id="msgDialog" title="Error"><p>Oops we encountered a database error.</p><p class="psychojs-alert-text">Click the REPORT button to report the error to EasyEyes team. We will work on fixing it soon. Thank you for your help.</p></div>',
 					titleColour: "red",
 				};
 
@@ -720,7 +721,7 @@ export class GUI
 			default:
 				return {
 					htmlCode:
-						`<div id="msgDialog" title="Error"><p>Unfortunately we encountered an unspecified error (error code: ${errorCode}.</p><p>The error has been recorded and we will work on fixing it soon.  Click OK to close the experiment.</p></div>`,
+						`<div id="msgDialog" title="Error"><p>Unfortunately we encountered an unspecified error (error code: ${errorCode}.</p><p class="psychojs-alert-text">Click the REPORT button to report the error to EasyEyes team. We will work on fixing it soon. Thank you for your help.</p></div>`,
 					titleColour: "red",
 				};
 		}
