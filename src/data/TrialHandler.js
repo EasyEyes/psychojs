@@ -98,7 +98,7 @@ export class TrialHandler extends PsychObject
 		this.thisTrialN = -1;
 
 		// total number of trials completed so far:
-		this.thisN = -1;
+		this.thisN = 0;
 
 		// the index of the current trial in the conditions list
 		this.thisIndex = 0;
