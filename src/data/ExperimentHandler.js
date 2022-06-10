@@ -76,9 +76,10 @@ export class ExperimentHandler extends PsychObject
 		this._addAttribute("extraInfo", extraInfo);
 
 		// process the extra info:
-		this._experimentName = (typeof extraInfo.expName === "string" && extraInfo.expName.length > 0)
-			? extraInfo.expName
-			: this.psychoJS.config.experiment.name;
+		// this._experimentName = (typeof extraInfo.expName === "string" && extraInfo.expName.length > 0)
+		// 	? extraInfo.expName
+		// 	: this.psychoJS.config.experiment.name;
+		this._experimentName = this.psychoJS.config.experiment.name;
 		this._participant = (typeof extraInfo.participant === "string" && extraInfo.participant.length > 0)
 			? extraInfo.participant
 			: "PARTICIPANT";
