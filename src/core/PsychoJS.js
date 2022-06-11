@@ -477,7 +477,7 @@ export class PsychoJS
 	 * @async
 	 * @public
 	 */
-	async quit({ message, isCompleted = false } = {})
+	async quit({ message, isCompleted = false, okText = "OK", okUrl = undefined } = {})
 	{
 		this.logger.info("[PsychoJS] Quit.");
 
@@ -536,15 +536,16 @@ export class PsychoJS
 					this._window.closeFullScreen();
 
 					// redirect if redirection URLs have been provided:
-					if (isCompleted && typeof self._completionUrl !== "undefined")
+					if (isCompleted && okUrl !== undefined)
 					{
-						window.location = self._completionUrl;
+						window.location = okUrl;
 					}
-					else if (!isCompleted && typeof self._cancellationUrl !== "undefined")
-					{
-						window.location = self._cancellationUrl;
-					}
+					// else if (!isCompleted && typeof self._cancellationUrl !== "undefined")
+					// {
+					// 	window.location = self._cancellationUrl;
+					// }
 				},
+				okText: okText,
 			});
 		}
 		catch (error)
