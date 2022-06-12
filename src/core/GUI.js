@@ -402,7 +402,7 @@ export class GUI
 				htmlCode = '<div id="msgDialog" title="Error">';
 				htmlCode += '<p class="validateTips">Unfortunately we encountered the following error:</p>';
 				htmlCode += stackCode;
-				htmlCode += `<p class="psychojs-alert-text">Click the REPORT button to report the error to EasyEyes team. We will work on fixing it soon. Thank you for your help.</p>`;
+				htmlCode += `<p class="psychojs-alert-text">Click the REPORT button to report the error to the EasyEyes team. We will try to fix it. Thank you for your help.</p>`;
 				htmlCode += "</div>";
 
 				titleColour = "red";
@@ -624,7 +624,7 @@ export class GUI
 			case 1:
 				return {
 					htmlCode:
-						'<div id="msgDialog" title="Error"><p>Oops we encountered an internal server error.</p><p class="psychojs-alert-text">Click the REPORT button to report the error to EasyEyes team. We will work on fixing it soon. Thank you for your help.</p></div>',
+						'<div id="msgDialog" title="Error"><p>Oops we encountered an internal server error.</p><p class="psychojs-alert-text">Click the REPORT button to report the error to the EasyEyes team. We will try to fix it. Thank you for your help.</p></div>',
 					titleColour: "red",
 				};
 
@@ -633,7 +633,7 @@ export class GUI
 			case 2:
 				return {
 					htmlCode:
-						'<div id="msgDialog" title="Error"><p>Oops we encountered a database error.</p><p class="psychojs-alert-text">Click the REPORT button to report the error to EasyEyes team. We will work on fixing it soon. Thank you for your help.</p></div>',
+						'<div id="msgDialog" title="Error"><p>Oops we encountered a database error.</p><p class="psychojs-alert-text">Click the REPORT button to report the error to the EasyEyes team. We will try to fix it. Thank you for your help.</p></div>',
 					titleColour: "red",
 				};
 
@@ -721,7 +721,7 @@ export class GUI
 			default:
 				return {
 					htmlCode:
-						`<div id="msgDialog" title="Error"><p>Unfortunately we encountered an unspecified error (error code: ${errorCode}.</p><p class="psychojs-alert-text">Click the REPORT button to report the error to EasyEyes team. We will work on fixing it soon. Thank you for your help.</p></div>`,
+						`<div id="msgDialog" title="Error"><p>Unfortunately we encountered an unspecified error (error code: ${errorCode}.</p><p class="psychojs-alert-text">Click the REPORT button to report the error to the EasyEyes team. We will try to fix it. Thank you for your help.</p></div>`,
 					titleColour: "red",
 				};
 		}
