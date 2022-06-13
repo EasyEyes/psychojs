@@ -504,7 +504,9 @@ export class PsychoJS
 			{
 				if (!this._serverMsg.has("__noOutput"))
 				{
+					// ! save data to .csv / .db
 					await this._experiment.save();
+					// ! save log to .log.gz
 					await this._logger.flush();
 				}
 			}

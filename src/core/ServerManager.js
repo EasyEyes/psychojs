@@ -798,11 +798,26 @@ export class ServerManager extends PsychObject
 
 		// prepare the POST query:
 		const info = this.psychoJS.experiment.extraInfo;
+
 		const participant = ((typeof info.participant === "string" && info.participant.length > 0) ? info.participant : "PARTICIPANT");
+		const prolificParticipant = info.ProlificParticipantID
+			? info.ProlificParticipantID
+			: undefined;
+
 		// const experimentName = (typeof info.expName !== "undefined") ? info.expName : this.psychoJS.config.experiment.name;
 		const experimentName = this.psychoJS.config.experiment.name;
-		const datetime = ((typeof info.date !== "undefined") ? info.date : MonotonicClock.getDateStr());
-		const filename = participant + "_" + experimentName + "_" + datetime + ".log";
+
+		const session = info.session || "SESSION";
+		const datetime =
+			typeof info.date !== "undefined"
+				? info.date
+				: MonotonicClock.getDateStr();
+
+		// const filename = participant + "_" + experimentName + "_" + datetime + ".log";
+		const filename = `${participant}_${
+			prolificParticipant ? `${prolificParticipant}_` : ""
+		}${experimentName}_${session}_${datetime}.log`;
+
 		const data = {
 			filename,
 			logs,

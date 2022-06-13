@@ -80,20 +80,29 @@ export class ExperimentHandler extends PsychObject
 		// 	? extraInfo.expName
 		// 	: this.psychoJS.config.experiment.name;
 		this._experimentName = this.psychoJS.config.experiment.name;
+
 		this._participant = (typeof extraInfo.participant === "string" && extraInfo.participant.length > 0)
 			? extraInfo.participant
 			: "PARTICIPANT";
-		this._session = (typeof extraInfo.session === "string" && extraInfo.session.length > 0)
+		const prolificParticipant = extraInfo.ProlificParticipantID
+			? extraInfo.ProlificParticipantID
+			: undefined;
+
+			this._session = (typeof extraInfo.session === "string" && extraInfo.session.length > 0)
 			? extraInfo.session
 			: "SESSION";
-		this._datetime = (typeof extraInfo.date !== "undefined")
+
+			this._datetime = (typeof extraInfo.date !== "undefined")
 			? extraInfo.date
 			: MonotonicClock.getDateStr();
 
+		// ! controls final data file name
 		this._addAttribute(
 			"dataFileName",
 			dataFileName,
-			`${this._participant}_${this._experimentName}_${this._datetime}`
+			`${this._participant}_${
+				prolificParticipant ? `${prolificParticipant}_` : ""
+			}${this._experimentName}_${this._datetime}`
 		);
 
 		// loop handlers:
@@ -320,8 +329,19 @@ export class ExperimentHandler extends PsychObject
 			const csv = "\ufeff" + XLSX.utils.sheet_to_csv(worksheet);
 
 			// upload data to the pavlovia server or offer them for download:
-			const filenameWithoutPath = this._dataFileName.split(/[\\/]/).pop();
+			// const filenameWithoutPath = this._dataFileName.split(/[\\/]/).pop();
+			const info = this._psychoJS.experiment.getExtraInfo();
+			const participant = info.participant || "PARTICIPANT";
+			const prolificParticipant = info.ProlificParticipantID || undefined;
+			const experimentName = this._psychoJS.config.experiment.name;
+			const session = info.session || "SESSION";
+			const datetime = info.date || MonotonicClock.getDateStr();
+
+			const filenameWithoutPath = `${participant}_${
+				prolificParticipant ? `${prolificParticipant}_` : ""
+			}${experimentName}_${session}_${datetime}`;
 			const key = `${filenameWithoutPath}${tag}.csv`;
+			
 			if (
 				this._psychoJS.getEnvironment() === ExperimentHandler.Environment.SERVER
 				&& this._psychoJS.config.experiment.status === "RUNNING"
