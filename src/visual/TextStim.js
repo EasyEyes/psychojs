@@ -194,8 +194,9 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			PIXI.TextMetrics.HEIGHT_MULTIPLIER = 12; // 12 // 2 
 			// PIXI.TextMetrics.BASELINE_SYMBOL = 'M';
 			// PIXI.TextMetrics.METRICS_STRING = '|ÉqÅjg.?y';
-			// const possiblyPaddedText = this._text;
-			// const definitelyUnpaddedText = possiblyPaddedText.trim().split("").filter(c => c !== "\u200B").join("").trim();
+			const possiblyPaddedText = this._text;
+			const definitelyUnpaddedText = possiblyPaddedText.trim().split("").filter(c => c !== "\u00A0" && c !== ".").join("").trim();
+			this._text = definitelyUnpaddedText;
 			this._textMetrics = PIXI.TextMetrics.measureText(this._text, this._getTextStyle());
 
 			// since PIXI.TextMetrics does not give us the actual bounding box of the text
@@ -210,6 +211,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			this._textMetrics.boundingBox = ctx.measureText(this._text);
 
 			document.body.removeChild(textMetricsCanvas);
+			this._text = possiblyPaddedText;
 		}
 
 		return this._textMetrics;
@@ -275,7 +277,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		if (tight)
 		{
 			const possiblyPaddedText = this._text;
-			const definitelyUnpaddedText = possiblyPaddedText.trim().split("").filter(c => c !== "\u200B").join("").trim();
+			const definitelyUnpaddedText = possiblyPaddedText.trim().split("").filter(c => c !== "\u00A0" && c !== "\u200B").join("").trim();
 			this.setText(definitelyUnpaddedText);
 			this.refresh();
 			const textMetrics_px = this.getTextMetrics();
