@@ -194,9 +194,6 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			PIXI.TextMetrics.HEIGHT_MULTIPLIER = 12; // 12 // 2 
 			// PIXI.TextMetrics.BASELINE_SYMBOL = 'M';
 			// PIXI.TextMetrics.METRICS_STRING = '|ÉqÅjg.?y';
-			const possiblyPaddedText = this._text;
-			const definitelyUnpaddedText = possiblyPaddedText.trim().split("").filter(c => c !== "\u00A0" && c !== ".").join("").trim();
-			this._text = definitelyUnpaddedText;
 			this._textMetrics = PIXI.TextMetrics.measureText(this._text, this._getTextStyle());
 
 			// since PIXI.TextMetrics does not give us the actual bounding box of the text
@@ -211,7 +208,6 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			this._textMetrics.boundingBox = ctx.measureText(this._text);
 
 			document.body.removeChild(textMetricsCanvas);
-			this._text = possiblyPaddedText;
 		}
 
 		return this._textMetrics;
@@ -276,10 +272,6 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	{
 		if (tight)
 		{
-			const possiblyPaddedText = this._text;
-			const definitelyUnpaddedText = possiblyPaddedText.trim().split("").filter(c => c !== "\u00A0" && c !== "\u200B").join("").trim();
-			this.setText(definitelyUnpaddedText);
-			this.refresh();
 			const textMetrics_px = this.getTextMetrics();
 			let left_px = this._pos[0] - textMetrics_px.boundingBox.actualBoundingBoxLeft;
 			let top_px = this._pos[1] + textMetrics_px.fontProperties.descent - textMetrics_px.boundingBox.actualBoundingBoxDescent;
@@ -325,9 +317,6 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 				this._win,
 				this._units);
 
-			// if (textChanged) this._setAttribute("text", possiblyPaddedText, false);
-			this.setText(possiblyPaddedText);
-			this.refresh();
 			return new PIXI.Rectangle(leftTop[0], leftTop[1], dimensions[0], dimensions[1]);
 		}
 		else
@@ -375,6 +364,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	 */
 	_getTextStyle()
 	{
+		console.log("wrapWidth", (typeof this._wrapWidth !== "undefined"));
 		return new PIXI.TextStyle({
 			fontFamily: this._font,
 			fontSize: Math.round(this._getLengthPix(this._height)),
@@ -385,6 +375,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			wordWrap: (typeof this._wrapWidth !== "undefined"),
 			wordWrapWidth: (typeof this._wrapWidth !== "undefined") ? this._getHorLengthPix(this._wrapWidth) : 0,
 			breakWords: this._isInstruction,
+			padding: 500,
 		});
 	}
 
