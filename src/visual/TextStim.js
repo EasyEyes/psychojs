@@ -364,7 +364,6 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	 */
 	_getTextStyle()
 	{
-		console.log("wrapWidth", (typeof this._wrapWidth !== "undefined"));
 		return new PIXI.TextStyle({
 			fontFamily: this._font,
 			fontSize: Math.round(this._getLengthPix(this._height)),
@@ -412,7 +411,6 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	{
 		if (!this._needUpdate)
 		{
-			console.log("update not needed, just returning", this._text);
 			return;
 		}
 		this._needUpdate = false;
