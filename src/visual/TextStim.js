@@ -72,6 +72,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			autoDraw,
 			autoLog,
 			isInstruction = false,
+			padding = 0,
 		} = {},
 	)
 	{
@@ -131,6 +132,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			"Arial",
 			this._onChange(true, true),
 		);
+		this._addAttribute("padding", padding, 0, onChange(true, true, true));
 		this._addAttribute(
 			"height",
 			height,
@@ -374,7 +376,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			wordWrap: (typeof this._wrapWidth !== "undefined"),
 			wordWrapWidth: (typeof this._wrapWidth !== "undefined") ? this._getHorLengthPix(this._wrapWidth) : 0,
 			breakWords: this._isInstruction,
-			padding: 500,
+			padding: this._padding || 0,
 		});
 	}
 
@@ -398,6 +400,14 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 				this._needUpdate = true;
 			}
 		}
+	}
+
+	setPadding(padding)
+	{
+		const heightPx = this.getBoundingBox(true).height;
+		const paddingPx = heightPx*padding;
+		if (padding) console.log(`\nRequested padding ratio: ${padding}\npaddingPx: ${paddingPx}\nheight: ${heightPx}`);
+		this._padding = paddingPx;
 	}
 
 	/**
