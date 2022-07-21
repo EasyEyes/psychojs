@@ -97,9 +97,11 @@ export class MultiStairHandler extends TrialHandler
 	 * @param{number} response - the response to the trial, must be either 0 (incorrect or
 	 * non-detected) or 1 (correct or detected)
 	 * @param{number | undefined} [value] - optional intensity / contrast / threshold
+	 * @param{boolean} [doGiveToQuest = true] - whether or not to give the response to QUEST, ie
+	 * 	as a response to a valid, usable trial
 	 * @returns {void}
 	 */
-	addResponse(response, value)
+	addResponse(response, value, doGiveToQuest = true)
 	{
 		// check that response is either 0 or 1:
 		if (response !== 0 && response !== 1)
@@ -116,10 +118,16 @@ export class MultiStairHandler extends TrialHandler
 		if (!this._finished)
 		{
 			// update the current staircase, but do not add the response again:
-			this._currentStaircase.addResponse(response, value, false);
+			this._currentStaircase.addResponse(response, value, false, doGiveToQuest);
+
+			// TODO Find out how to repeat bad trials
+			// if (!doGiveToQuest){
+				// If this was a bad trial, put back in the list of possible conditions
+				// this.trialKey = util.shuffle([...this.trialKey, this._currentStaircase._name]);
+			// }
 
 			// move onto the next trial:
-			this._nextTrial();
+			this._nextTrial(doGiveToQuest);
 		}
 	}
 
@@ -197,6 +205,7 @@ export class MultiStairHandler extends TrialHandler
 			this._validateConditions();
 
 			this._staircases = [];
+			this.trialKey = [];
 
 			for (const condition of this._conditions)
 			{
@@ -215,6 +224,7 @@ export class MultiStairHandler extends TrialHandler
 					{
 						args.nTrials = this._nTrials;
 					}
+					this.trialKey.push(...Array(args.nTrials).fill(args.name));
 
 					handler = new QuestHandler(args);
 				}
@@ -228,6 +238,7 @@ export class MultiStairHandler extends TrialHandler
 
 				this._staircases.push(handler);
 			}
+			this.trialKey = util.shuffle(this.trialKey);
 
 			this._currentPass = [];
 			this._currentStaircase = null;
@@ -272,8 +283,12 @@ export class MultiStairHandler extends TrialHandler
 					if (this._currentPass.length > 0)
 					{
 						// select a handler at random:
-						const index = Math.floor(this._randomNumberGenerator() * this._currentPass.length);
-						const handler = this._currentPass[index];
+						// const index = Math.floor(this._randomNumberGenerator() * this._currentPass.length);
+						// const handler = this._currentPass[index];
+						// this._currentPass = [handler];
+
+						const nextConditionName = this.trialKey.shift();
+						const handler = this._staircases.filter(staircase => staircase._name === nextConditionName)[0];
 						this._currentPass = [handler];
 					}
 				}

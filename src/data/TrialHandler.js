@@ -120,10 +120,10 @@ export class TrialHandler extends PsychObject
 	/**
 	 * Helps go through each trial in the sequence one by one, mirrors PsychoPy.
 	 */
-	next()
+	next(doesTrialCount = true)
 	{
 		const trialIterator = this[Symbol.iterator]();
-		const { value } = trialIterator.next();
+		const { value } = trialIterator.next(doesTrialCount);
 
 		return value;
 	}
@@ -139,37 +139,41 @@ export class TrialHandler extends PsychObject
 	[Symbol.iterator]()
 	{
 		return {
-			next: () =>
+			next: (doesTrialCount = true) =>
 			{
-				this.thisTrialN++;
-				this.thisN++;
-				this.nRemaining--;
+				if (doesTrialCount){
+					this.thisTrialN++;
+					this.thisN++;
+					this.nRemaining--;
+					// check for the last trial:
+					if (this.nRemaining === 0)
+					{
+						// this only indicated that the scheduling is done, not that the loop is finished
+						// this.finished = true;
+					}
 
-				// check for the last trial:
-				if (this.nRemaining === 0)
-				{
-					// this only indicated that the scheduling is done, not that the loop is finished
-					// this.finished = true;
-				}
+					// start a new repetition:
+					if (this.thisTrialN === this.nStim)
+					{
+						this.thisTrialN = 0;
+						this.thisRepN++;
+					}
 
-				// start a new repetition:
-				if (this.thisTrialN === this.nStim)
-				{
-					this.thisTrialN = 0;
-					this.thisRepN++;
-				}
+					// check if we have completed the sequence:
+					if (this.thisRepN >= this.nReps)
+					{
+						this.thisTrial = null;
+						return { done: true };
+					}
 
-				// check if we have completed the sequence:
-				if (this.thisRepN >= this.nReps)
-				{
-					this.thisTrial = null;
-					return { done: true };
 				}
 
 				this.thisIndex = this._trialSequence[this.thisRepN][this.thisTrialN];
 				this.thisTrial = this.trialList[this.thisIndex];
-				this.ran = 1;
-				this.order = this.thisN;
+				// this.ran = 1;
+				this.ran = doesTrialCount ? 1 : 0;
+				// this.order = this.thisN;
+				this.order = doesTrialCount ? this.thisN : -1;
 				/*
 				if self.autoLog:
 					msg = 'New trial (rep=%i, index=%i): %s'

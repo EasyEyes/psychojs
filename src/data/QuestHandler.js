@@ -121,10 +121,11 @@ export class QuestHandler extends TrialHandler
 	 * @param{number | undefined} value - optional intensity / contrast / threshold
 	 * @param{boolean} [doAddData = true] - whether or not to add the response as data to the
 	 * 	experiment
+	 * @param{boolean} [doGiveToQuest = true] - whether or not to give the response to QUEST, ie
+	 * 	as a response to a valid, usable trial
 	 * @returns {void}
 	 */
-	addResponse(response, value, doAddData = true)
-	{
+	addResponse(response, value, doAddData = true, doGiveToQuest = true){
 		// check that response is either 0 or 1:
 		if (response !== 0 && response !== 1)
 		{
@@ -140,19 +141,21 @@ export class QuestHandler extends TrialHandler
 			this._psychoJS.experiment.addData(this._name + '.response', response);
 		}
 
-		// update the QUEST pdf:
-		if (typeof value !== "undefined")
-		{
-			this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, value, response);
-		}
-		else
-		{
-			this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, this._questValue, response);
+		if (doGiveToQuest) {
+			// update the QUEST pdf:
+			if (typeof value !== "undefined")
+			{
+				this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, value, response);
+			}
+			else
+			{
+				this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, this._questValue, response);
+			}
 		}
 
 		if (!this._finished)
 		{
-			this.next();
+			this.next(doGiveToQuest);
 
 			// estimate the next value of the QUEST variable
 			// (and update the trial list and snapshots):
