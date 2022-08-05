@@ -497,7 +497,7 @@ export class PsychoJS
 
 			// save the results and the logs of the experiment:
 			this.gui.dialog({
-				warning: "Closing the session. Please wait a few moments.",
+				warning: "Saving the data. This may take a few minutes. Please don't close this window. Thank you.",
 				showOK: false,
 			});
 			if (isCompleted || this._config.experiment.saveIncompleteResults)
