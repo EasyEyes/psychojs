@@ -27,6 +27,7 @@
     "start": "npm run build"
   },
   "dependencies": {
+    "firebase": "^9.9.2",
     "howler": "^2.2.3",
     "log4javascript": "github:Ritzlgrmft/log4javascript",
     "pako": "^1.0.11",
