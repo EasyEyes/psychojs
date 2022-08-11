@@ -37,6 +37,7 @@ import seedrandom from "seedrandom";
  * @param {number} options.randomSeed - seed for the random number generator
  * @param {string} options.name - name of the handler
  * @param {boolean} [options.autoLog= false] - whether or not to log
+ * @param {number}
  */
 export class MultiStairHandler extends TrialHandler
 {
@@ -53,7 +54,8 @@ export class MultiStairHandler extends TrialHandler
 		nTrials = 50,
 		randomSeed,
 		name,
-		autoLog
+		autoLog,
+		duplicates = 1, // aka subtrials-per-Trial
 	} = {})
 	{
 		super({
@@ -74,6 +76,13 @@ export class MultiStairHandler extends TrialHandler
 		this._addAttribute("stairType", stairType, MultiStairHandler.StaircaseType.SIMPLE);
 		this._addAttribute("conditions", conditions, [undefined]);
 		this._addAttribute("nTrials", nTrials);
+
+		// Support grouping multiple trials into one, ie duplicating a trial into multiple
+		// eg for targetKind===repeatedLetters, one scientist-specified trial becomes two trials here (one for each response)
+		this._duplicates = duplicates;
+
+		// aka which sub-trial we're on currently
+		this._duplicatedTrialCardinal = 0; // Repeat this condition from value from 1 to this._duplicates
 
 		if (typeof randomSeed !== "undefined")
 		{
@@ -127,7 +136,7 @@ export class MultiStairHandler extends TrialHandler
 			// }
 
 			// move onto the next trial:
-			this._nextTrial(doGiveToQuest);
+			this._nextTrial();
 		}
 	}
 
@@ -224,7 +233,10 @@ export class MultiStairHandler extends TrialHandler
 					{
 						args.nTrials = this._nTrials;
 					}
-					this.trialKey.push(...Array(args.nTrials).fill(args.name));
+					if (
+						!args.hasOwnProperty("_duplicatedConditionCardinal") ||
+						args._duplicatedConditionCardinal === 1
+					) this.trialKey.push(...Array(args.nTrials).fill(args.name));
 
 					handler = new QuestHandler(args);
 				}
@@ -239,6 +251,7 @@ export class MultiStairHandler extends TrialHandler
 				this._staircases.push(handler);
 			}
 			this.trialKey = util.shuffle(this.trialKey);
+			this.trialKey = util.repeatEveryElement(this.trialKey, this._duplicates);
 
 			this._currentPass = [];
 			this._currentStaircase = null;
@@ -287,8 +300,14 @@ export class MultiStairHandler extends TrialHandler
 						// const handler = this._currentPass[index];
 						// this._currentPass = [handler];
 
+						this._duplicatedTrialCardinal = (this._duplicatedTrialCardinal % this._duplicates) + 1;
 						const nextConditionName = this.trialKey.shift();
-						const handler = this._staircases.filter(staircase => staircase._name === nextConditionName)[0];
+						let handler;
+						if (this._staircases.every(s => s.hasOwnProperty("_duplicatedConditionCardinal"))){
+							handler = this._staircases.filter(staircase => staircase._name === nextConditionName && staircase._duplicatedConditionCardinal === this._duplicatedTrialCardinal)[0];
+						} else {
+							handler = this._staircases.filter(staircase => staircase._name === nextConditionName)[0];
+						}
 						this._currentPass = [handler];
 					}
 				}

@@ -1490,3 +1490,12 @@ export async function getDownloadSpeed(psychoJS, nbDownloads = 1)
 		download.src = `${imageUrl}?salt=${tic}`;
 	});
 }
+
+/**
+ * Return a flat array with every element of `a` repeated `n` times 
+ * @param {array} a 
+ * @param {int} n 
+ */
+export const repeatEveryElement = (a, n) => {
+  return a.map(x => [...[...new Array(n).keys()].map(_ => x)]).flat();
+};
