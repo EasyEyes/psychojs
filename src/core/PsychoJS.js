@@ -7,7 +7,7 @@
  * @copyright (c) 2017-2020 Ilixa Ltd. (http://ilixa.com) (c) 2020-2021 Open Science Tools Ltd. (https://opensciencetools.org)
  * @license Distributed under the terms of the MIT License
  */
-import { logPsychoJSQuit } from "../../../components/temporaryLogger.js";
+// import { logPsychoJSQuit } from "../../../components/temporaryLogger.js";
 import log4javascript from "log4javascript";
 import { ExperimentHandler } from "../data/ExperimentHandler.js";
 import { MonotonicClock } from "../util/Clock.js";
@@ -510,7 +510,7 @@ export class PsychoJS
 					// ! save log to .log.gz
 					await this._logger.flush();
 				    
-					logPsychoJSQuit("_insideQuitFunction",window.location.toString(),rc.id.value)
+					// logPsychoJSQuit("_insideQuitFunction",window.location.toString(),rc.id.value)
 				}
 			}
 
