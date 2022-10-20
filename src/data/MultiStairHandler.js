@@ -103,8 +103,8 @@ export class MultiStairHandler extends TrialHandler
 	 * @name module:data.MultiStairHandler#addResponse
 	 * @function
 	 * @public
-	 * @param{number} response - the response to the trial, must be either 0 (incorrect or
-	 * non-detected) or 1 (correct or detected)
+	 * @param{number | number[]} response - the response to the trial, must be either 0 (incorrect or
+	 * non-detected) or 1 (correct or detected), or an array of 0,1s to indicate multiple responses at this QUEST value
 	 * @param{number | undefined} [value] - optional intensity / contrast / threshold
 	 * @param{boolean} [doGiveToQuest = true] - whether or not to give the response to QUEST, ie
 	 * 	as a response to a valid, usable trial
@@ -112,8 +112,8 @@ export class MultiStairHandler extends TrialHandler
 	 */
 	addResponse(response, value, doGiveToQuest = true)
 	{
-		// check that response is either 0 or 1:
-		if (response !== 0 && response !== 1)
+		// check that response is either 0 or 1, or an array of only 0s and 1s:
+		if (response !== 0 && response !== 1 && !(response instanceof Array && response.every(r => [0,1].includes(r))))
 		{
 			throw {
 				origin: "MultiStairHandler.addResponse",
@@ -122,7 +122,11 @@ export class MultiStairHandler extends TrialHandler
 			};
 		}
 
-		this._psychoJS.experiment.addData(this._name+'.response', response);
+		if (response instanceof Array){
+			response.forEach(r => this._psychoJS.experiment.addData(this._name + '.response', r));
+		} else {
+			this._psychoJS.experiment.addData(this._name + '.response', response);
+		}
 
 		if (!this._finished)
 		{

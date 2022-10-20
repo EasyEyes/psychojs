@@ -129,8 +129,8 @@ export class QuestHandler extends TrialHandler
 	 * @returns {void}
 	 */
 	addResponse(response, value, doAddData = true, doGiveToQuest = true){
-		// check that response is either 0 or 1:
-		if (response !== 0 && response !== 1)
+		// check that response is either 0 or 1, or an array of only 0s and 1s:
+		if (response !== 0 && response !== 1 && !(response instanceof Array && response.every(r => [0,1].includes(r))))
 		{
 			throw {
 				origin: "QuestHandler.addResponse",
@@ -141,18 +141,30 @@ export class QuestHandler extends TrialHandler
 
 		if (doAddData)
 		{
-			this._psychoJS.experiment.addData(this._name + '.response', response);
+			if (response instanceof Array){
+				response.forEach(r => this._psychoJS.experiment.addData(this._name + '.response', r));
+			} else {
+				this._psychoJS.experiment.addData(this._name + '.response', response);
+			}
 		}
 
 		if (doGiveToQuest) {
 			// update the QUEST pdf:
 			if (typeof value !== "undefined")
 			{
-				this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, value, response);
+				if (response instanceof Array){
+					response.forEach( r => this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, value, r));
+				} else {
+					this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, value, response);
+				}
 			}
 			else
 			{
-				this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, this._questValue, response);
+				if (response instanceof Array){
+					response.forEach( r => this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, this._questValue, r));
+				} else {
+					this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, this._questValue, response);
+				}
 			}
 		}
 
