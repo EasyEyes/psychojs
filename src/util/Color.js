@@ -53,6 +53,14 @@ export class Color
 			if (obj[0] === "#")
 			{
 				this._hex = obj;
+				this._rgb = Color.hexToRgb(this._hex);
+			}
+			// rgb representation:
+			else if (obj.slice(0, 3) === "rgb")
+			{
+				const rgb = obj.split("(")[1].split(")")[0].split(",");
+				this._rgb = [parseFloat(rgb[0]) / 255.0, parseFloat(rgb[1]) / 255.0, parseFloat(rgb[2]) / 255.0];
+				this._hex = Color._rgbToHex(this._rgb);
 			}
 			// named color:
 			else
@@ -63,9 +71,8 @@ export class Color
 				}
 
 				this._hex = Color.NAMED_COLORS[obj.toLowerCase()];
+				this._rgb = Color.hexToRgb(this._hex);
 			}
-
-			this._rgb = Color.hexToRgb(this._hex);
 		}
 		// hexadecimal number representation (e.g. 0xFF0000)
 		// note: we expect the color space to be RGB
