@@ -1086,8 +1086,9 @@ export class ServerManager extends PsychObject
 		const soundResources = new Set();
 		const fontResources = [];
 		for (const name of resources)
-		{
+		{	
 			const nameParts = name.toLowerCase().split(".");
+			// this._psychoJS.logger.debug("printing value of nameParts " + nameParts);
 			const extension = (nameParts.length > 1) ? nameParts.pop() : undefined;
 
 			// warn the user if the resource does not have any extension:
@@ -1111,6 +1112,7 @@ export class ServerManager extends PsychObject
 			const pathExtension = (pathParts.length > 1) ? pathParts.pop() : undefined;
 
 			// preload.js with forced binary:
+			//why are odp,xls and json included?
 			if (["csv", "odp", "xls", "xlsx", "json"].indexOf(extension) > -1)
 			{
 				preloadManifest.push(/*new createjs.LoadItem().set(*/ {
@@ -1183,8 +1185,22 @@ export class ServerManager extends PsychObject
 
 			const pathExtension = pathStatusData.path.toLowerCase().split(".").pop();
 			try
-			{
-				const newFont = await new FontFace(name, `url('${pathStatusData.path}') format('${pathExtension}')`).load();
+			{	
+				var keyword="";
+				switch(pathExtension){
+					case "woff2" : 	keyword="woff2";
+									break;
+					case "woff" : 	keyword="woff";
+									break;		
+					case "otf": 	keyword="opentype";
+								 	break;
+					case "ttf": 	keyword="truetype";
+									break;
+					default: 		throw Object.assign(response, {
+									error: `Unsupported font extension ${pathExtension}`
+					});
+				}
+				const newFont = await new FontFace(name, `url('${pathStatusData.path}') format('${keyword}')`).load();
 				document.fonts.add(newFont);
 
 				++this._nbLoadedResources;
