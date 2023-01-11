@@ -1186,21 +1186,22 @@ export class ServerManager extends PsychObject
 			const pathExtension = pathStatusData.path.toLowerCase().split(".").pop();
 			try
 			{	
-				var keyword="";
+				var keyw;
 				switch(pathExtension){
-					case "woff2" : 	keyword="woff2";
+					case "woff2" : 	keyw="woff2";
 									break;
-					case "woff" : 	keyword="woff";
+					case "woff" : 	keyw="woff";
 									break;		
-					case "otf": 	keyword="opentype";
+					case "otf": 	keyw="opentype";
 								 	break;
-					case "ttf": 	keyword="truetype";
+					case "ttf": 	keyw="truetype";
 									break;
 					default: 		throw Object.assign(response, {
 									error: `Unsupported font extension ${pathExtension}`
 					});
 				}
-				const newFont = await new FontFace(name, `url('${pathStatusData.path}') format('${keyword}')`).load();
+
+				const newFont = await new FontFace(name, `url('${pathStatusData.path}') format('${keyw}')`).load();
 				document.fonts.add(newFont);
 
 				++this._nbLoadedResources;
