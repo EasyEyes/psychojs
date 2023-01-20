@@ -73,6 +73,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			autoLog,
 			isInstruction = false,
 			padding = 0,
+			characterSet = "",
 		} = {},
 	)
 	{
@@ -95,6 +96,12 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		// Instruction text
 		this._isInstruction = isInstruction || false
 
+		this._addAttribute(
+			"characterSet",
+			characterSet,
+			"|ÉqÅ",
+			onChange(true, true, true),
+		);
 		// text and font:
 		this._addAttribute(
 			"text",
@@ -195,7 +202,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			PIXI.TextMetrics.BASELINE_MULTIPLIER = 8;// 8 // 1.4
 			PIXI.TextMetrics.HEIGHT_MULTIPLIER = 12; // 12 // 2 
 			// PIXI.TextMetrics.BASELINE_SYMBOL = 'M';
-			// PIXI.TextMetrics.METRICS_STRING = '|ÉqÅjg.?y';
+			PIXI.TextMetrics.METRICS_STRING = this._characterSet;
 			this._textMetrics = PIXI.TextMetrics.measureText(this._text, this._getTextStyle());
 
 			// since PIXI.TextMetrics does not give us the actual bounding box of the text
