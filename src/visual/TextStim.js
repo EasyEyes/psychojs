@@ -73,7 +73,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			autoLog,
 			isInstruction = false,
 			padding = 0,
-			characterSet = "",
+			characterSet = "|ÉqÅ",
 		} = {},
 	)
 	{
