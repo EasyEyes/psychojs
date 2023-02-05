@@ -7,7 +7,6 @@
  * @copyright (c) 2017-2020 Ilixa Ltd. (http://ilixa.com) (c) 2020-2021 Open Science Tools Ltd. (https://opensciencetools.org)
  * @license Distributed under the terms of the MIT License
  */
-// import { logPsychoJSQuit } from "../../../components/temporaryLogger.js";
 import log4javascript from "log4javascript";
 import { ExperimentHandler } from "../data/ExperimentHandler.js";
 import { MonotonicClock } from "../util/Clock.js";
