@@ -17,8 +17,6 @@ import { GUI } from "./GUI.js";
 import { Logger } from "./Logger.js";
 import { ServerManager } from "./ServerManager.js";
 import { Window } from "./Window.js";
-import { rc } from "../../../components/global.js";
-// import {Shelf} from "../data/Shelf";
 
 /**
  * <p>PsychoJS manages the lifecycle of an experiment. It initialises the PsychoJS library and its various components (e.g. the {@link ServerManager}, the {@link EventManager}), and is used by the experiment to schedule the various tasks.</p>
@@ -109,11 +107,6 @@ export class PsychoJS
 		return this._browser;
 	}
 
-	// get shelf()
-	// {
-	// 	return this._shelf;
-	// }
-
 	/**
 	 * @constructor
 	 * @public
@@ -158,9 +151,6 @@ export class PsychoJS
 		// Window:
 		this._window = undefined;
 
-		// // Shelf:
-		// this._shelf = new Shelf(this);
-
 		// redirection URLs:
 		this._cancellationUrl = undefined;
 		this._completionUrl = undefined;
@@ -176,7 +166,7 @@ export class PsychoJS
 		}
 
 		this.logger.info("[PsychoJS] Initialised.");
-		this.logger.info("[PsychoJS] @version 2022.1.1");
+		this.logger.info("[PsychoJS] @version 2022.1.3");
 
 		// hide the initialisation message:
 		jQuery("#root").addClass("is-ready");
@@ -508,8 +498,6 @@ export class PsychoJS
 					await this._experiment.save();
 					// ! save log to .log.gz
 					await this._logger.flush();
-				    
-					// logPsychoJSQuit("_insideQuitFunction",window.location.toString(),rc.id.value)
 				}
 			}
 

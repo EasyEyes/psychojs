@@ -214,7 +214,6 @@ export class VisualStim extends util.mix(MinimalStim).with(WindowMixin)
 	 * Estimate the bounding box.
 	 *
 	 * @name module:visual.VisualStim#_estimateBoundingBox
-	 * @function
 	 * @protected
 	 */
 	_estimateBoundingBox()
@@ -230,7 +229,6 @@ export class VisualStim extends util.mix(MinimalStim).with(WindowMixin)
 	 * Get the bounding box in pixel coordinates
 	 *
 	 * @name module:visual.VisualStim#contains
-	 * @function
 	 * @protected
 	 * @returns {PIXI.Rectangle} the bounding box, in pixel coordinates
 	 */
@@ -271,7 +269,6 @@ export class VisualStim extends util.mix(MinimalStim).with(WindowMixin)
 	 * 	with _addAttribute.
 	 *
 	 * @name module:visual.VisualStim#_onChange
-	 * @function
 	 * @protected
 	 * @param {boolean} [withPixi = false] - whether or not the PIXI representation must
 	 * 	also be updated
