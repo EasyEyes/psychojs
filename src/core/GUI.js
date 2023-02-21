@@ -416,7 +416,7 @@ export class GUI
 		// we are displaying a message:
 		else if (typeof message !== "undefined")
 		{
-			htmlCode = '<div id="msgDialog" title="EasyEyes Threshold">'
+			htmlCode = '<div id="msgDialog" title="EasyEyes">'
 				+ '<p class="validateTips">' + message + "</p>"
 				+ "</div>";
 			titleColour = "green";
