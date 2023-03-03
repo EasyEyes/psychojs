@@ -284,6 +284,8 @@ export class ExperimentHandler extends PsychObject
 	{
 		this._psychoJS.logger.info("[PsychoJS] Save experiment results.");
 
+		this.extraInfo["dataSaved"] = true;
+
 		// get attributes:
 		if (attributes.length === 0)
 		{
