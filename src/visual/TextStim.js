@@ -407,12 +407,20 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		}
 	}
 
-	setPadding(padding)
+	setPadding(padding, log = false)
 	{
-		const heightPx = this.getBoundingBox(true).height;
+		const heightPx = this._boundingBox.height;
 		const paddingPx = heightPx*padding;
-		// if (padding) console.log(`\nRequested padding ratio: ${padding}\npaddingPx: ${paddingPx}\nheight: ${heightPx}`);
-		this._padding = paddingPx;
+
+		const hasChanged = this._setAttribute("padding", paddingPx, log);
+        if (hasChanged)
+        {
+            if (typeof this._pixi !== "undefined")
+            {
+                this._pixi.style = this._getTextStyle();
+                this._needUpdate = true;
+            }
+        }
 	}
 
 	/**
