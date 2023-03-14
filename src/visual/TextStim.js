@@ -42,6 +42,11 @@ import { VisualStim } from "./VisualStim.js";
  * @param {PIXI.Graphics} [options.clipMask= null] - the clip mask
  * @param {boolean} [options.autoDraw= false] - whether or not the stimulus should be automatically drawn on every frame flip
  * @param {boolean} [options.autoLog= false] - whether or not to log
+ * @param {boolean} isInstruction
+ * @param {number} padding
+ * @param {string} characterSet
+ * @param {number} letterSpacing - letter spacing aka letter tracking
+ * 
  *
  * @todo vertical alignment, and orientation are currently NOT implemented
  */
@@ -74,11 +79,12 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			isInstruction = false,
 			padding = 0,
 			characterSet = "|ÉqÅ",
+			letterSpacing,
 		} = {},
 	)
 	{
 		super({ name, win, units, ori, opacity, depth, pos, clipMask, autoDraw, autoLog });
-
+		
 		// callback to deal with text metrics invalidation:
 		const onChange = (withPixi = false, withBoundingBox = false, withMetrics = false) =>
 		{
@@ -139,7 +145,16 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			"Arial",
 			this._onChange(true, true),
 		);
-		this._addAttribute("padding", padding, 0, onChange(true, true, true));
+		this._addAttribute(
+			"padding",
+			 padding, 
+			 0, 
+			 onChange(true, true, true));
+		this._addAttribute(
+			"letterSpacing",
+			letterSpacing, 
+			0, 
+			onChange(true, true, true));	 
 		this._addAttribute(
 			"height",
 			height,
@@ -382,6 +397,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			wordWrapWidth: (typeof this._wrapWidth !== "undefined") ? this._getHorLengthPix(this._wrapWidth) : 0,
 			breakWords: this._isInstruction,
 			padding: this._padding || 0,
+			letterSpacing: this._letterSpacing,
 		});
 	}
 
@@ -407,20 +423,35 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		}
 	}
 
-	setPadding(padding, log = false)
+	setPadding(padding)
 	{
-		const heightPx = this._boundingBox.height;
+		const heightPx = this.getBoundingBox(true).height;
 		const paddingPx = heightPx*padding;
+		// if (padding) console.log(`\nRequested padding ratio: ${padding}\npaddingPx: ${paddingPx}\nheight: ${heightPx}`);
+		this._padding = paddingPx;
+	}
 
-		const hasChanged = this._setAttribute("padding", paddingPx, log);
-        if (hasChanged)
-        {
-            if (typeof this._pixi !== "undefined")
-            {
-                this._pixi.style = this._getTextStyle();
-                this._needUpdate = true;
-            }
-        }
+	/**
+	 * Setter for the letterSpacing attribute used for letterTracking
+	 *
+	 * @name module:visual.TextStim#setLetterSpacing
+	 * @public
+	 * @param {undefined | number} spacing - letter spacing
+	 * @param {boolean} [log= false] - whether of not to log
+	 */
+	setLetterSpacing(spacing, log = false)
+	{
+		// Must use _setAttribute method when updating an attribute to trigger onChange() and update the stim
+		const hasChanged = this._setAttribute("letterSpacing", spacing, log);
+
+		if (hasChanged)
+		{
+			if (typeof this._pixi !== "undefined")
+			{
+				this._pixi.style = this._getTextStyle();
+				this._needUpdate = true;
+			}
+		}
 	}
 
 	/**
