@@ -467,7 +467,10 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	 */
 	setLetterSpacingByProportion(spacing, log = false)
 	{
-		let prop_spacing = spacing * Math.round(this._getLengthPix(this._height));
+		// required to make the proportional number more intuitive. 
+		// The number is mostly arbitrary and simply adjusted to preference and may be adjusted as needed
+		let adjustment = 1.15
+		let prop_spacing = spacing * this.height * adjustment;
 		this.setLetterSpacing(prop_spacing, log);
 	}
 
