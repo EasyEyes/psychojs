@@ -440,7 +440,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	 * @param {undefined | number} spacing - letter spacing in pixels
 	 * @param {boolean} [log= false] - whether of not to log
 	 */
-	setLetterSpacing(spacing, log = false)
+	setLetterSpacing(spacing = 0, log = false)
 	{
 		// Must use _setAttribute method when updating an attribute to trigger onChange() and update the stim
 		const hasChanged = this._setAttribute("letterSpacing", spacing, log);
@@ -465,7 +465,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	 * font size.
 	 * @param {boolean} [log= false] - whether of not to log
 	 */
-	setLetterSpacingByProportion(spacing, log = false)
+	setLetterSpacingByProportion(spacing = 0, log = false)
 	{
 		// required to make the proportional number more intuitive. 
 		// The number is mostly arbitrary and simply adjusted to preference and may be adjusted as needed
