@@ -469,8 +469,10 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	{
 		// required to make the proportional number more intuitive. 
 		// The number is mostly arbitrary and simply adjusted to preference and may be adjusted as needed
-		let adjustment = 1.15
-		let prop_spacing = spacing * this.height * adjustment;
+		// let adjustment = 1.15
+		// let prop_spacing = spacing * this.height * adjustment;
+
+		const prop_spacing = spacing * this.height;
 		this.setLetterSpacing(prop_spacing, log);
 	}
 
