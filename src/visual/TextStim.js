@@ -458,7 +458,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	/**
 	 * Setter for the letterSpacing attribute used for letterTracking
 	 *
-	 * @name module:visual.TextStim#setLetterSpacing
+	 * @name module:visual.TextStim#setLetterSpacingByProportion
 	 * @public
 	 * @param {undefined | number} spacing - letter spacing where the value changes the spacing in
 	 * proportion of the font size, that is, 0.5 will create letter spacing of about half of the 
@@ -467,12 +467,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	 */
 	setLetterSpacingByProportion(spacing = 0, log = false)
 	{
-		// required to make the proportional number more intuitive. 
-		// The number is mostly arbitrary and simply adjusted to preference and may be adjusted as needed
-		// let adjustment = 1.15
-		// let prop_spacing = spacing * this.height * adjustment;
-
-		const prop_spacing = spacing * this.height;
+		let prop_spacing = spacing * this.height;
 		this.setLetterSpacing(prop_spacing, log);
 	}
 
