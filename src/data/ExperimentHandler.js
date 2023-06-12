@@ -400,6 +400,42 @@ export class ExperimentHandler extends PsychObject
 	}
 
 	/**
+	 * Save curstom data to a csv file that is downloaded in addition to the usual output csv
+	 *
+	 * <ul>
+	 *   <li>The results are offered for immediate download.</li>
+	 * </ul>
+	 * <p>
+	 *
+	 * @name module:data.ExperimentHandler#save
+	 * @function
+	 * @public
+	 * @param {Array.<Object>} [data] - array of objects to be saved to the csv
+	 * @param {string} [csvLabel="stimulus"] - suffix to be added to the output csv filename
+	 */
+	saveCSV(data, csvLabel="stimulus"){
+		// note: we use the XLSX library as it automatically deals with header, takes care of quotes,
+		// newlines, etc.
+		const worksheet = XLSX.utils.json_to_sheet(data);
+		// prepend BOM
+		const csv = "\ufeff" + XLSX.utils.sheet_to_csv(worksheet);
+
+		const info = this._psychoJS.experiment.getExtraInfo();
+		const participant = info.participant || "PARTICIPANT";
+		const prolificParticipant = info.ProlificParticipantID || undefined;
+		const experimentName = this._psychoJS.config.experiment.name;
+		const session = info.session || "SESSION";
+		const datetime = info.date || MonotonicClock.getDateStr();
+
+		const filenameWithoutPath = `${participant}_${
+			prolificParticipant ? `${prolificParticipant}_` : ""
+		}${experimentName}_${session}_${datetime}_${csvLabel}`;
+		const key = `${filenameWithoutPath}.csv`;
+		
+		util.offerDataForDownload(key, csv, "text/csv");
+	}
+
+	/**
 	 * Get the attribute names and values for the current trial of a given loop.
 	 * <p> Only info relating to the trial execution are returned.</p>
 	 *

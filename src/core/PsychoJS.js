@@ -370,6 +370,7 @@ export class PsychoJS
 						if (self._config.experiment.saveIncompleteResults)
 						{
 							self._experiment.save({ sync: true });
+							self._experiment.saveCSV({ sync: true });
 						}
 
 						// close the session:
@@ -467,7 +468,7 @@ export class PsychoJS
 	 * @async
 	 * @public
 	 */
-	async quit({ message, isCompleted = false, okText = "OK", okUrl = undefined } = {})
+	async quit({ message, isCompleted = false, okText = "OK", okUrl = undefined, additionalCSVData = [] } = {})
 	{
 		this.logger.info("[PsychoJS] Quit.");
 
@@ -498,6 +499,9 @@ export class PsychoJS
 					await this._experiment.save();
 					// ! save log to .log.gz
 					await this._logger.flush();
+
+					// Save timestamped data for comparing EE data to eyetracker data
+					if (additionalCSVData.length) this._experiment.saveCSV(additionalCSVData);
 				}
 			}
 
