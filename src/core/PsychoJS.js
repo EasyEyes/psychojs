@@ -370,7 +370,6 @@ export class PsychoJS
 						if (self._config.experiment.saveIncompleteResults)
 						{
 							self._experiment.save({ sync: true });
-							self._experiment.saveCSV({ sync: true });
 						}
 
 						// close the session:
@@ -470,6 +469,7 @@ export class PsychoJS
 	 */
 	async quit({ message, isCompleted = false, okText = "OK", okUrl = undefined, additionalCSVData = [] } = {})
 	{
+		console.log("!. PsychoJS.quit()");
 		this.logger.info("[PsychoJS] Quit.");
 
 		this._experiment.experimentEnded = true;
