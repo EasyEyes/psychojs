@@ -499,11 +499,12 @@ export class PsychoJS
 					await this._experiment.save();
 					// ! save log to .log.gz
 					await this._logger.flush();
-
-					// Save timestamped data for comparing EE data to eyetracker data
-					if (additionalCSVData.length) this._experiment.saveCSV(additionalCSVData);
 				}
 			}
+
+			console.log("!. additionalCSVData in PsychoJS.quit()", additionalCSVData);
+			// Save timestamped data for comparing EE data to eyetracker data
+			if (additionalCSVData.length) this._experiment.saveCSV(additionalCSVData);
 
 			// close the session:
 			if (this.getEnvironment() === ExperimentHandler.Environment.SERVER)
