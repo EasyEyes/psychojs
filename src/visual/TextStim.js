@@ -388,7 +388,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	{
 		return new PIXI.TextStyle({
 			fontFamily: this._font,
-			fontSize: Math.round(this._getLengthPix(this._height)),
+			fontSize: Math.round(this._getLengthPix(this._height)) + "pt",
 			fontWeight: (this._bold) ? "bold" : "normal",
 			fontStyle: (this._italic) ? "italic" : "normal",
 			fill: this.getContrastedColor(new Color(this._color), this._contrast).hex,
