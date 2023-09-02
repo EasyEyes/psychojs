@@ -435,6 +435,24 @@ export class ExperimentHandler extends PsychObject
 		util.offerDataForDownload(key, csv, "text/csv");
 	}
 
+	downloadJSON(data) {
+		const info = this._psychoJS.experiment.getExtraInfo();
+		const participant = info.participant || "PARTICIPANT";
+		const session = info.session || "SESSION";
+		const datetime = info.date || MonotonicClock.getDateStr();
+		const experimentName = this._psychoJS.config.experiment.name;
+
+		const filename = `${participant}_${experimentName}_${session}_${datetime}_sound.json`;
+		const contentType = "application/json;charset=utf-8;";
+
+		const anchor = document.createElement("a");
+		anchor.href = 'data:' + contentType + ',' + encodeURIComponent(JSON.stringify(data));
+		anchor.download = filename;
+		document.body.appendChild(anchor);
+		anchor.click();
+		document.body.removeChild(anchor);
+	}
+
 	/**
 	 * Get the attribute names and values for the current trial of a given loop.
 	 * <p> Only info relating to the trial execution are returned.</p>
