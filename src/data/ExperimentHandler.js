@@ -451,6 +451,14 @@ export class ExperimentHandler extends PsychObject
 		document.body.appendChild(anchor);
 		anchor.click();
 		document.body.removeChild(anchor);
+		if (
+			this._psychoJS.getEnvironment() === ExperimentHandler.Environment.SERVER
+			&& this._psychoJS.config.experiment.status === "RUNNING"
+			&& !this._psychoJS._serverMsg.has("__pilotToken")
+		)
+		{
+			return this._psychoJS.serverManager.uploadData(filename, JSON.stringify(data), false);
+		}
 	}
 
 	/**
