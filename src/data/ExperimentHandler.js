@@ -435,14 +435,18 @@ export class ExperimentHandler extends PsychObject
 		util.offerDataForDownload(key, csv, "text/csv");
 	}
 
-	downloadJSON(data) {
+	downloadJSON(data, i) {
 		const info = this._psychoJS.experiment.getExtraInfo();
 		const participant = info.participant || "PARTICIPANT";
 		const session = info.session || "SESSION";
 		const datetime = info.date || MonotonicClock.getDateStr();
 		const experimentName = this._psychoJS.config.experiment.name;
-
-		const filename = `${participant}_${experimentName}_${session}_${datetime}_sound.json`;
+		let filename;
+		if (i == "") {
+			filename = `${participant}_${experimentName}_${session}_${datetime}_sound.json`;
+		} else {
+			filename = `${participant}_${experimentName}_${session}_${datetime}_M${i}.json`;
+		}
 		const contentType = "application/json;charset=utf-8;";
 
 		const anchor = document.createElement("a");
