@@ -441,12 +441,8 @@ export class ExperimentHandler extends PsychObject
 		const session = info.session || "SESSION";
 		const datetime = info.date || MonotonicClock.getDateStr();
 		const experimentName = this._psychoJS.config.experiment.name;
-		let filename;
-		if (i == "") {
-			filename = `${participant}_${experimentName}_${session}_${datetime}_sound.json`;
-		} else {
-			filename = `${participant}_${experimentName}_${session}_${datetime}_M${i}.json`;
-		}
+		const suffix = i == 0 ? "sound" : `M${i}`;
+		const filename = `${participant}_${experimentName}_${session}_${datetime}_${suffix}.json`;
 		const contentType = "application/json;charset=utf-8;";
 
 		const anchor = document.createElement("a");
