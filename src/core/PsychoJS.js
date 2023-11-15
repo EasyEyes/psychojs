@@ -467,7 +467,7 @@ export class PsychoJS
 	 * @async
 	 * @public
 	 */
-	async quit({ message, isCompleted = false, okText = "OK", okUrl = undefined, additionalCSVData = [] } = {})
+	async quit({ message, isCompleted = false, okText = "OK", okUrl = undefined, additionalCSVData = [], cursorTrackingData = [] } = {})
 	{
 		console.log("!. PsychoJS.quit()");
 		this.logger.info("[PsychoJS] Quit.");
@@ -505,6 +505,8 @@ export class PsychoJS
 			console.log("!. additionalCSVData in PsychoJS.quit()", additionalCSVData);
 			// Save timestamped data for comparing EE data to eyetracker data
 			if (additionalCSVData.length) this._experiment.saveCSV(additionalCSVData);
+			// Save timestamped data for tracking the user's cursor position
+			if (cursorTrackingData.length) this._experiment.saveCSV(cursorTrackingData, "cursor", true);
 
 			// close the session:
 			if (this.getEnvironment() === ExperimentHandler.Environment.SERVER)

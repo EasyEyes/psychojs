@@ -413,7 +413,7 @@ export class ExperimentHandler extends PsychObject
 	 * @param {Array.<Object>} [data] - array of objects to be saved to the csv
 	 * @param {string} [csvLabel="stimulus"] - suffix to be added to the output csv filename
 	 */
-	saveCSV(data, csvLabel="stimulus"){
+	saveCSV(data, csvLabel="stimulus", online=false){
 		// note: we use the XLSX library as it automatically deals with header, takes care of quotes,
 		// newlines, etc.
 		const worksheet = XLSX.utils.json_to_sheet(data);
@@ -432,6 +432,14 @@ export class ExperimentHandler extends PsychObject
 		}${experimentName}_${session}_${datetime}_${csvLabel}`;
 		const key = `${filenameWithoutPath}.csv`;
 		
+		if (online){
+			try {
+				console.log(`Data to save, ${key}`, data);
+				return this._psychoJS.serverManager.uploadData(key, data, false);
+			} catch (e) {
+				console.error("Error saving csv data to online.", e);
+			}
+		}
 		util.offerDataForDownload(key, csv, "text/csv");
 	}
 
