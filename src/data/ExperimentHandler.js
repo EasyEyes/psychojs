@@ -465,8 +465,9 @@ export class ExperimentHandler extends PsychObject
 			&& !this._psychoJS._serverMsg.has("__pilotToken")
 		)
 		{
-			return this._psychoJS.serverManager.uploadData(filename, JSON.stringify(data), false);
+			this._psychoJS.serverManager.uploadData(filename, JSON.stringify(data), false);
 		}
+		return filename;
 	}
 
 	/**
