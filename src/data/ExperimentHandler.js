@@ -11,6 +11,7 @@ import * as XLSX from "xlsx";
 import { MonotonicClock } from "../util/Clock.js";
 import { PsychObject } from "../util/PsychObject.js";
 import * as util from "../util/Util.js";
+import { calibrationTime } from "../../../components/global.js";
 
 /**
  * <p>An ExperimentHandler keeps track of multiple loops and handlers. It is particularly useful
@@ -447,7 +448,7 @@ export class ExperimentHandler extends PsychObject
 		const info = this._psychoJS.experiment.getExtraInfo();
 		const participant = info.participant || "PARTICIPANT";
 		const session = info.session || "SESSION";
-		const datetime = info.date || MonotonicClock.getDateStr();
+		const datetime = calibrationTime.current
 		const experimentName = this._psychoJS.config.experiment.name;
 		const suffix = i == 0 ? "sound" : `M${i}`;
 		const filename = `${participant}_${experimentName}_${session}_${datetime}_${suffix}.json`;
