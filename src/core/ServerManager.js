@@ -737,6 +737,7 @@ export class ServerManager extends PsychObject
 			+ "/api/v2/experiments/" + encodeURIComponent(this._psychoJS.config.experiment.fullpath)
 			+ "/sessions/" + this._psychoJS.config.session.token
 			+ "/results";
+		console.log("!. ~ file: ServerManager.js:737 ~ url:", url);
 
 		// synchronous query the pavlovia server:
 		if (sync)

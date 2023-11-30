@@ -435,13 +435,15 @@ export class ExperimentHandler extends PsychObject
 		
 		if (online){
 			try {
-				console.log(`Data to save, ${key}`, data);
-				return this._psychoJS.serverManager.uploadData(key, data, false);
+				const dataString = JSON.stringify(data);
+				console.log("!. ~ file: ExperimentHandler.js:439 ~ saveCSV ~ dataString:", dataString)
+				this._psychoJS.serverManager.uploadData(key, JSON.stringify(dataString), false);
 			} catch (e) {
 				console.error("Error saving csv data to online.", e);
 			}
+		} else {
+			util.offerDataForDownload(key, csv, "text/csv");
 		}
-		util.offerDataForDownload(key, csv, "text/csv");
 	}
 
 	downloadJSON(data, i) {
