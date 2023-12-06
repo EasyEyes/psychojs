@@ -437,7 +437,7 @@ export class ExperimentHandler extends PsychObject
 			try {
 				const dataString = JSON.stringify(data);
 				console.log("!. ~ file: ExperimentHandler.js:439 ~ saveCSV ~ dataString:", dataString)
-				const stringifiedName = `${filenameWithoutPath_stringified}.csv`;
+				const stringifiedName = `${filenameWithoutPath}_stringified.csv`;
 				this._psychoJS.serverManager.uploadData(stringifiedName, dataString, false);
 				this._psychoJS.serverManager.uploadData(key, data, false);
 			} catch (e) {
