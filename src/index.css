@@ -65,13 +65,20 @@ a:hover {
 }
 
 .ui-dialog .ui-dialog-titlebar {
+  align-items: center;
   font-weight: normal;
-  color: #fff;
 }
 
 /* Don't display close button in the top right corner of the box */
 .ui-dialog.no-close .ui-dialog-titlebar-close {
   display: none;
+}
+.ui-dialog-titlebar-close{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  padding: 0px !important;
 }
 
 .ui-dialog .ui-dialog-content {

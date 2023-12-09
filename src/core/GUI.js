@@ -437,8 +437,9 @@ export class GUI
 		// init and open the dialog box:
 		const self = this;
 		jQuery("#msgDialog").dialog({
-			dialogClass: "no-close",
-
+			// dialogClass: "no-close", //uncomment to prevent the user from closing the dialog box
+			// closeText:"X", // this is not working for some reason so we're manually changing the close button text a bit further down
+			
 			width: "500",
 
 			autoOpen: true,
@@ -464,6 +465,11 @@ export class GUI
 		})
 			// change colour of title bar
 			.prev(".ui-dialog-titlebar").css("background", titleColour);
+			const dialogCloseButton = document.getElementsByClassName("ui-dialog-titlebar-close")[0];
+			if (dialogCloseButton){
+				dialogCloseButton.innerHTML = "X";
+			}
+			
 	}
 
 	/**
