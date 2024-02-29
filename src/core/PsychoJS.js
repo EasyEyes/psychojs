@@ -498,7 +498,11 @@ export class PsychoJS
 					// ! save data to .csv / .db
 					await this._experiment.save();
 					// ! save log to .log.gz
-					await this._logger.flush();
+					try {
+						await this._logger.flush();
+					} catch (e) {
+						console.error("Failed to flush logger, in PsychoJS.quit", e);
+					}
 				}
 			}
 
