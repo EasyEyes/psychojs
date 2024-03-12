@@ -128,6 +128,8 @@ export class MultiStairHandler extends TrialHandler
 			this._psychoJS.experiment.addData(this._name + '.response', response);
 		}
 
+		this._psychoJS.experiment.addData("trialGivenToQuest", doGiveToQuest);
+
 		if (!this._finished)
 		{
 			// update the current staircase, but do not add the response again:
