@@ -467,7 +467,7 @@ export class PsychoJS
 	 * @async
 	 * @public
 	 */
-	async quit({ message, isCompleted = false, okText = "OK", okUrl = undefined, additionalCSVData = [], cursorTrackingData = [] } = {})
+	async quit({ message, isCompleted = false, okText = "OK", okUrl = undefined, additionalCSVData = [], cursorTrackingData = [], showSafeToCloseDialog = true } = {})
 	{
 		console.log("!. PsychoJS.quit()");
 		this.logger.info("[PsychoJS] Quit.");
@@ -518,7 +518,9 @@ export class PsychoJS
 				await this._serverManager.closeSession(isCompleted);
 			}
 
-			// thank participant for waiting and either quit or redirect:
+			this._gui.closeDialog();
+			if(showSafeToCloseDialog) {
+				// thank participant for waiting and either quit or redirect:
 			let text = "Thank you. It's now safe to close this browser tab.";
 			text += (typeof message !== "undefined") ? ` ${message}<br/>` : " Goodbye!<br/>";
 			const self = this;
@@ -550,6 +552,9 @@ export class PsychoJS
 				},
 				okText: okText,
 			});
+			}
+
+			
 		}
 		catch (error)
 		{
