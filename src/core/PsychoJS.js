@@ -518,9 +518,7 @@ export class PsychoJS
 				await this._serverManager.closeSession(isCompleted);
 			}
 
-			this._gui.closeDialog();
-			if(showSafeToCloseDialog) {
-				// thank participant for waiting and either quit or redirect:
+			// thank participant for waiting and either quit or redirect:
 			let text = "Thank you. It's now safe to close this browser tab.";
 			text += (typeof message !== "undefined") ? ` ${message}<br/>` : " Goodbye!<br/>";
 			const self = this;
@@ -552,7 +550,7 @@ export class PsychoJS
 				},
 				okText: okText,
 			});
-			}
+			
 
 			
 		}
