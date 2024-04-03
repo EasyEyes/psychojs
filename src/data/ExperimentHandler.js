@@ -420,7 +420,7 @@ export class ExperimentHandler extends PsychObject
 	 * @param {Array.<Object>} [data] - array of objects to be saved to the csv
 	 * @param {string} [csvLabel="stimulus"] - suffix to be added to the output csv filename
 	 */
-	saveCSV(data, csvLabel="stimulus", online=false){
+	saveCSV(data, csvLabel="stimulus", online=false, isForMovieExperiment=false){
 		// note: we use the XLSX library as it automatically deals with header, takes care of quotes,
 		// newlines, etc.
 		const worksheet = XLSX.utils.json_to_sheet(data);
@@ -434,7 +434,7 @@ export class ExperimentHandler extends PsychObject
 		const session = info.session || "SESSION";
 		const datetime = info.date || MonotonicClock.getDateStr();
 
-		const filenameWithoutPath = `${participant}_${
+		const filenameWithoutPath = isForMovieExperiment? csvLabel: `${participant}_${
 			prolificParticipant ? `${prolificParticipant}_` : ""
 		}${experimentName}_${session}_${datetime}_${csvLabel}`;
 		const key = `${filenameWithoutPath}.csv`;
