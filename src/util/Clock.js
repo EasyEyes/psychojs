@@ -93,6 +93,29 @@ export class MonotonicClock
 		return dateTimeFormat.format(date);
 	}
 
+	static getTimeZone(locales = "en-CA", optionsMaybe = {}) {
+		// Create a new Date object
+		const date = new Date();
+		// Merge default options with any provided options
+		const options = Object.assign({
+			timeZoneName: "short"
+		}, optionsMaybe);
+	
+		// Create a DateTimeFormat object with the specified locale and options
+		const dateTimeFormat = new Intl.DateTimeFormat(locales, options);
+		// Format the date into parts
+		const parts = dateTimeFormat.formatToParts(date);
+	
+		// Extract and format the relevant parts: the literal (usually includes comma or space) and the time zone name
+		const timeZone = parts.find(part => part.type === "timeZoneName").value;
+		// const literal = parts.find(part => part.type === "literal")?.value || '';
+		const timeZoneUTC = timeZone.replace("GMT", "UTC");
+	
+		// Return a formatted string combining the literal and the time zone name
+		console.log(timeZoneUTC);
+		return timeZoneUTC;
+	}
+
 	/**
 	 * Get the clock's current time in the default format filtering out file name unsafe characters.
 	 *
