@@ -423,6 +423,7 @@ export class ExperimentHandler extends PsychObject
 	saveCSV(data, csvLabel="stimulus", online=false, isForMovieExperiment=false){
 		// note: we use the XLSX library as it automatically deals with header, takes care of quotes,
 		// newlines, etc.
+		console.log(data);
 		const worksheet = XLSX.utils.json_to_sheet(data);
 		// prepend BOM
 		const csv = "\ufeff" + XLSX.utils.sheet_to_csv(worksheet);
@@ -433,21 +434,31 @@ export class ExperimentHandler extends PsychObject
 		const experimentName = this._psychoJS.config.experiment.name;
 		const session = info.session || "SESSION";
 		const datetime = info.date || MonotonicClock.getDateStr();
-
 		const filenameWithoutPath = isForMovieExperiment? csvLabel: `${participant}_${
 			prolificParticipant ? `${prolificParticipant}_` : ""
 		}${experimentName}_${session}_${datetime}_${csvLabel}`;
 		const key = `${filenameWithoutPath}.csv`;
-		
-		if (online){
-			try {
-				this._psychoJS.serverManager.uploadData(key, csv, false);
-			} catch (e) {
-				console.error("Error saving csv data to online.", e);
+		if (this._psychoJS.config.experiment.saveFormat === ExperimentHandler.SaveFormat.CSV) { 
+			if (online){
+				try {
+					this._psychoJS.serverManager.uploadData(key, csv, false);
+				} catch (e) {
+					console.error("Error saving csv data to online.", e);
+				}
+			} else {
+				util.offerDataForDownload(key, csv, "text/csv");
 			}
-		} else {
-			util.offerDataForDownload(key, csv, "text/csv");
-		}
+			} else if (this._psychoJS.config.experiment.saveFormat === ExperimentHandler.SaveFormat.DATABASE) {
+				if (online){
+					try {
+						this._psychoJS.serverManager.uploadData(key, JSON.stringify(csv), false);
+					} catch (e) {
+						console.error("Error saving csv data to online.", e);
+					}
+				} else {
+					util.offerDataForDownload(key, csv, "text/csv");
+				}
+			}
 	}
 
 	downloadJSON(data, i) {
