@@ -385,7 +385,6 @@ export class ExperimentHandler extends PsychObject
 				{
 					doc[attributes[h]] = data[r][attributes[h]];
 				}
-
 				documents.push(doc);
 			}
 
@@ -396,6 +395,7 @@ export class ExperimentHandler extends PsychObject
 				&& !this._psychoJS._serverMsg.has("__pilotToken")
 			)
 			{
+				console.log('documents', documents);
 				const key = "results"; // name of the mongoDB collection
 				return /*await*/ this._psychoJS.serverManager.uploadData(key, JSON.stringify(documents), sync);
 			}
@@ -451,9 +451,7 @@ export class ExperimentHandler extends PsychObject
 			} else if (this._psychoJS.config.experiment.saveFormat === ExperimentHandler.SaveFormat.DATABASE) {
 				if (online){
 					try {
-						this._psychoJS.config.experiment.saveFormat = ExperimentHandler.SaveFormat.CSV
-						this._psychoJS.serverManager.uploadData(key, csv, false);
-						this._psychoJS.config.experiment.saveFormat = ExperimentHandler.SaveFormat.DATABASE
+						this._psychoJS.serverManager.uploadData(key, JSON.stringify(data), false);
 					} catch (e) {
 						console.error("Error saving csv data to online.", e);
 					}
