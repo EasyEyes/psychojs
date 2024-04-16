@@ -451,7 +451,9 @@ export class ExperimentHandler extends PsychObject
 			} else if (this._psychoJS.config.experiment.saveFormat === ExperimentHandler.SaveFormat.DATABASE) {
 				if (online){
 					try {
-						this._psychoJS.serverManager.uploadData(key, JSON.stringify(csv), false);
+						this._psychoJS.config.experiment.saveFormat = ExperimentHandler.SaveFormat.CSV
+						this._psychoJS.serverManager.uploadData(key, csv, false);
+						this._psychoJS.config.experiment.saveFormat = ExperimentHandler.SaveFormat.DATABASE
 					} catch (e) {
 						console.error("Error saving csv data to online.", e);
 					}
