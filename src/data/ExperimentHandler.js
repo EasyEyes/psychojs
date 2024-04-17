@@ -455,16 +455,6 @@ export class ExperimentHandler extends PsychObject
 					} catch (e) {
 						console.error("Error saving to results.", e);
 					}
-					try {
-						this._psychoJS.serverManager.uploadData(`results/${key}`, JSON.stringify(data), false);
-					} catch (e) {
-						console.error("Error saving to results/key", e);
-					}
-					try {
-						this._psychoJS.serverManager.uploadData(`data/${key}`, JSON.stringify(data), false);
-					} catch (e) {
-						console.error("Error saving to data/key", e);
-					}
 				} else {
 					util.offerDataForDownload(key, csv, "text/csv");
 				}
