@@ -438,6 +438,17 @@ export class ExperimentHandler extends PsychObject
 			prolificParticipant ? `${prolificParticipant}_` : ""
 		}${experimentName}_${session}_${datetime}_${csvLabel}`;
 		const key = `${filenameWithoutPath}.csv`;
+		let documents = [];
+		const gitlabConfig = this._psychoJS.config.gitlab;
+			const __projectId = (typeof gitlabConfig !== "undefined" && typeof gitlabConfig.projectId !== "undefined") ? gitlabConfig.projectId : undefined;
+		for (let r = 0; r < data.length; r++) {
+			data[r]['__projectId'] = __projectId;
+			data[r]['__experimentName'] = this.psychoJS.config.experiment.name;
+			data[r]['__participant'] = this._participant;
+			data[r]['__session'] = this._session;
+			data[r]['__datetime'] = this._datetime;
+		}
+
 		if (this._psychoJS.config.experiment.saveFormat === ExperimentHandler.SaveFormat.CSV) { 
 			if (online){
 				try {
@@ -449,6 +460,7 @@ export class ExperimentHandler extends PsychObject
 				util.offerDataForDownload(key, csv, "text/csv");
 			}
 			} else if (this._psychoJS.config.experiment.saveFormat === ExperimentHandler.SaveFormat.DATABASE) {
+			
 				if (online){
 					try {
 						this._psychoJS.serverManager.uploadData('results', JSON.stringify(data), false);
