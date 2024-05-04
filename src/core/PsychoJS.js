@@ -467,7 +467,17 @@ export class PsychoJS
 	 * @async
 	 * @public
 	 */
-	async quit({ message, isCompleted = false, okText = "OK", okUrl = undefined, additionalCSVData = [], cursorTrackingData = [], showSafeToCloseDialog = true } = {})
+	async quit({
+	 message, 
+	 isCompleted = false, 
+	 okText = "OK", 
+	 okUrl = undefined, 
+	 additionalCSVData = [], 
+	 cursorTrackingData = [], 
+	 showSafeToCloseDialog = true, 
+	 safeTocloseMessage= "Thank you. It's now safe to close this browser tab.",
+	 doNotCloseMessage = "<b>Thank you. You're done. DO NOT CLOSE THIS WINDOW.</b> It will close once your data are safely saved. Closing this window will prevent saving of your data, and they will be lost. This may take a few minutes. Thank you for your patience."
+	} = {})
 	{
 		console.log("!. PsychoJS.quit()");
 		this.logger.info("[PsychoJS] Quit.");
@@ -488,7 +498,7 @@ export class PsychoJS
 
 			// save the results and the logs of the experiment:
 			this.gui.dialog({
-				warning: "<b>Thank you. You're done. DO NOT CLOSE THIS WINDOW.</b> It will close once your data are safely saved. Closing this window will prevent saving of your data, and they will be lost. This may take a few minutes. Thank you for your patience.",
+				warning: doNotCloseMessage,
 				showOK: false,
 			});
 			if (isCompleted || this._config.experiment.saveIncompleteResults)
@@ -519,7 +529,7 @@ export class PsychoJS
 			}
 
 			// thank participant for waiting and either quit or redirect:
-			let text = "Thank you. It's now safe to close this browser tab.";
+			let text = safeTocloseMessage;
 			text += (typeof message !== "undefined") ? ` ${message}<br/>` : " Goodbye!<br/>";
 			const self = this;
 			this._gui.dialog({
