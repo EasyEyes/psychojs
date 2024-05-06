@@ -497,10 +497,11 @@ export class PsychoJS
 			}
 
 			// save the results and the logs of the experiment:
-			this.gui.dialog({
-				warning: doNotCloseMessage,
-				showOK: false,
-			});
+			// this.gui.dialog({
+			// 	warning: doNotCloseMessage,
+			// 	showOK: false,
+			// });
+			this.gui.displayMessage({message:null,warning: doNotCloseMessage, error : null})
 			if (isCompleted || this._config.experiment.saveIncompleteResults)
 			{
 				if (!this._serverMsg.has("__noOutput"))
@@ -532,36 +533,36 @@ export class PsychoJS
 			let text = safeTocloseMessage;
 			text += (typeof message !== "undefined") ? ` ${message}<br/>` : " Goodbye!<br/>";
 			const self = this;
-			this._gui.dialog({
-				message: text,
-				onOK: () =>
-				{
-					// close the window:
-					self._window.close();
+			// this._gui.dialog({
+			// 	message: text,
+			// 	onOK: () =>
+			// 	{
+			// 		// close the window:
+			// 		self._window.close();
 
-					// remove everything from the browser window:
-					while (document.body.hasChildNodes())
-					{
-						document.body.removeChild(document.body.lastChild);
-					}
+			// 		// remove everything from the browser window:
+			// 		while (document.body.hasChildNodes())
+			// 		{
+			// 			document.body.removeChild(document.body.lastChild);
+			// 		}
 
-					// return from fullscreen if we were there:
-					this._window.closeFullScreen();
+			// 		// return from fullscreen if we were there:
+			// 		this._window.closeFullScreen();
 
-					// redirect if redirection URLs have been provided:
-					if (isCompleted && okUrl !== undefined)
-					{
-						window.location = okUrl;
-					}
-					// else if (!isCompleted && typeof self._cancellationUrl !== "undefined")
-					// {
-					// 	window.location = self._cancellationUrl;
-					// }
-				},
-				okText: okText,
-			});
+			// 		// redirect if redirection URLs have been provided:
+			// 		if (isCompleted && okUrl !== undefined)
+			// 		{
+			// 			window.location = okUrl;
+			// 		}
+			// 		// else if (!isCompleted && typeof self._cancellationUrl !== "undefined")
+			// 		// {
+			// 		// 	window.location = self._cancellationUrl;
+			// 		// }
+			// 	},
+			// 	okText: okText,
+			// });
 			
-
+			this.gui.displayMessage({message:text,warning: null, error : null})
 			
 		}
 		catch (error)

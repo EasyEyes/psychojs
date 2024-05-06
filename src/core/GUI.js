@@ -473,6 +473,60 @@ export class GUI
 	}
 
 	/**
+ * Show a message to the participant directly in the main window.
+ *
+ * <p>This function can be used to display both warning and error messages.</p>
+ *
+ * @name module:core.GUI#displayMessage
+ * @function
+ * @public
+ * @param {Object} options
+ * @param {string} options.message - the message to be displayed
+ * @param {Object.<string, *>} options.error - an exception
+ * @param {string} options.warning - a warning message
+ */
+displayMessage({
+    message,
+    warning,
+    error
+} = {}) {
+    let htmlCode;
+    let titleColor;
+
+    // Determine the type of message and set the HTML content and color accordingly
+    if (error) {
+        if (!error) {
+            error = "Unspecified JavaScript error";
+        }
+        htmlCode = `<div id="msgDisplay" class="error"><p>${error}</p></div>`;
+        titleColor = "black";
+    } else if (message) {
+        htmlCode = `<div id="msgDisplay" class="message"><p>${message}</p></div>`;
+        titleColor = "black";
+    } else if (warning) {
+        htmlCode = `<div id="msgDisplay" class="warning"><p>${warning}</p></div>`;
+        titleColor = "black";
+    }
+	let displayElement; 
+	if (document.getElementById("exp-end-text") == null){
+    displayElement = document.createElement('div');} else {
+	displayElement = document.getElementById("exp-end-text");
+	}
+    displayElement.innerHTML = htmlCode;
+
+    // Optionally, apply CSS styles to the message display
+    displayElement.style.color = titleColor;
+    displayElement.style.textAlign = 'center';
+    displayElement.style.padding = '20px';
+	displayElement.id  = "exp-end-text";
+	displayElement.style.visibility = "visible";
+	document.body.appendChild(displayElement);
+}
+
+// You might need to add CSS styles for classes `error`, `message`, and `warning` if not already defined
+
+
+	/**
 	 * Close the previously opened dialog box, if there is one.
 	 *
 	 * @name module:core.GUI#closeDialog
