@@ -98,6 +98,10 @@ a:hover {
   }
 }
 
+#root.initialized::after {
+  display: none;
+}
+
 /* Initialisation message (which will disappear behind the canvas) */
 #root::after {
   content: "Initializing the experiment ...";
