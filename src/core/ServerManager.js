@@ -1201,8 +1201,8 @@ export class ServerManager extends PsychObject
 									error: `Unsupported font extension ${pathExtension}`
 					});
 				}
-
-				const newFont = await new FontFace(name, `url('${pathStatusData.path}') format('${keyw}')`).load();
+				// updated May 12th, 2024, removed suffix to resolve issue in firefox
+				const newFont = await new FontFace(name.replace(/\.[^.]+$/, ''), `url('${pathStatusData.path}') format('${keyw}')`).load();
 				document.fonts.add(newFont);
 
 				++this._nbLoadedResources;
