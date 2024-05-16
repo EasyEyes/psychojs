@@ -530,7 +530,7 @@ export class PsychoJS
 			}
 
 			// thank participant for waiting and either quit or redirect:
-			let text = safeTocloseMessage;
+			let text = `<div style='font-size: 24px;'>${safeTocloseMessage}</div>`;
 			text += (typeof message !== "undefined") ? ` ${message}<br/>` : " Goodbye!<br/>";
 			const self = this;
 			// this._gui.dialog({
