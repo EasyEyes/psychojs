@@ -517,9 +517,13 @@ displayMessage({
     // Optionally, apply CSS styles to the message display
     displayElement.style.color = titleColor;
     displayElement.style.textAlign = 'center';
-    displayElement.style.padding = '20px';
+    // displayElement.style.padding = '20px';
 	displayElement.id  = "exp-end-text";
 	displayElement.style.visibility = "visible";
+	//make font bigger
+	displayElement.style.fontSize = "24px";
+	//background color of body should be white
+	document.body.style.backgroundColor = "white";
 	document.body.appendChild(displayElement);
 }
 
