@@ -562,7 +562,7 @@ export class PsychoJS
 			// 	okText: okText,
 			// });
 			
-			this.gui.displayMessage({message:text,warning: null, error : null, okUrl: okUrl, isCompleted:isCompleted, okText: okText})
+			this.gui.displayMessage({message:safeTocloseMessage,warning: null, error : null, okUrl: okUrl, isCompleted:isCompleted, okText: okText})
 			
 		}
 		catch (error)

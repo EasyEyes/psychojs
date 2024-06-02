@@ -506,7 +506,7 @@ displayMessage({
         titleColor = "black";
     } else if (message) {
 		if (isCompleted && okUrl !== undefined){
-			htmlCode = `<div id="msgDisplay" class="message"><p>${message} ${okText}</p></div>`;
+			htmlCode = `<div id="msgDisplay" class="message">${message} ${okText}</div>`;
 		} else {
 			htmlCode = `<div id="msgDisplay" class="message"><p>${message}</p></div>`;
 		}
@@ -526,6 +526,8 @@ displayMessage({
     // Optionally, apply CSS styles to the message display
     displayElement.style.color = titleColor;
     displayElement.style.textAlign = 'center';
+	displayElement.style.lineHeight = "1.5";
+	displayElement.style.paddingTop = "40vh";
     // displayElement.style.padding = '20px';
 	displayElement.id  = "exp-end-text";
 	displayElement.style.visibility = "visible";
@@ -539,11 +541,17 @@ displayMessage({
 	// If an OK URL is provided, redirect the participant to that URL
 	const button = document.createElement('button');
 	button.innerHTML = "OK";
+	button.style.position = "absolute";
+	button.style.bottom = "30px";
+	button.style.left = "50%";
+	button.style.transform = "translateX(-50%)";
+	button.style.zIndex = "100";
 	button.classList.add("form-input-btn");
 	button.addEventListener('click', () => {
 			window.location = okUrl;	
 	});
 	displayElement.appendChild(button);
+
 }
 
 }
