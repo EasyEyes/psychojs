@@ -484,11 +484,15 @@ export class GUI
  * @param {string} options.message - the message to be displayed
  * @param {Object.<string, *>} options.error - an exception
  * @param {string} options.warning - a warning message
+ * @param {string} [options.okUrl] - the URL to redirect 
  */
 displayMessage({
     message,
     warning,
-    error
+    error,
+	okUrl,
+	isCompleted,
+	okText
 } = {}) {
     let htmlCode;
     let titleColor;
@@ -501,7 +505,12 @@ displayMessage({
         htmlCode = `<div id="msgDisplay" class="error"><p>${error}</p></div>`;
         titleColor = "black";
     } else if (message) {
-        htmlCode = `<div id="msgDisplay" class="message"><p>${message}</p></div>`;
+		if (isCompleted && okUrl !== undefined){
+			htmlCode = `<div id="msgDisplay" class="message"><p>${message} ${okText}</p></div>`;
+		} else {
+			htmlCode = `<div id="msgDisplay" class="message"><p>${message}</p></div>`;
+		}
+        
         titleColor = "black";
     } else if (warning) {
         htmlCode = `<div id="msgDisplay" class="warning"><p>${warning}</p></div>`;
@@ -525,6 +534,18 @@ displayMessage({
 	//background color of body should be white
 	document.body.style.backgroundColor = "white";
 	document.body.appendChild(displayElement);
+
+	if(isCompleted && okUrl !== undefined){
+	// If an OK URL is provided, redirect the participant to that URL
+	const button = document.createElement('button');
+	button.innerHTML = "OK";
+	button.classList.add("form-input-btn");
+	button.addEventListener('click', () => {
+			window.location = okUrl;	
+	});
+	displayElement.appendChild(button);
+}
+
 }
 
 // You might need to add CSS styles for classes `error`, `message`, and `warning` if not already defined
