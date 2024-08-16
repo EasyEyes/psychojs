@@ -189,12 +189,14 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			"contrast",
 			contrast,
 			1.0,
-			this._onChange(true, false)
+			this._onChange(true, false, false),
 		);
 
 		// estimate the bounding box (using TextMetrics):
 		this._estimateBoundingBox();
 
+    this.fontRenderMaxScalar = 1;
+    
 		if (this._autoLog)
 		{
 			this._psychoJS.experimentLogger.exp(`Created ${this.name} = ${this.toString()}`);
@@ -218,8 +220,16 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			PIXI.TextMetrics.HEIGHT_MULTIPLIER = 12; // 12 // 2 
 			// PIXI.TextMetrics.BASELINE_SYMBOL = 'M';
 			PIXI.TextMetrics.METRICS_STRING = this._characterSet;
-			this._textMetrics = PIXI.TextMetrics.measureText(this._text, this._getTextStyle());
-
+      this._textMetrics = PIXI.TextMetrics.measureText(this._text, this._getTextStyle());
+			try {
+  	       this._textMetrics = PIXI.TextMetrics.measureText(this._text, this._getTextStyle(false));
+				   this._textMetrics.frmpLimitedTextMetrics = false;
+			} catch (e) {
+           this._textMetrics = PIXI.TextMetrics.measureText(this._text, this._getTextStyle());
+           // Using an approximated textMetrics, ie scaled down by this.fontRenderMaxScalar
+           this._textMetrics.frmpLimitedTextMetrics = true;
+			}
+			
 			// since PIXI.TextMetrics does not give us the actual bounding box of the text
 			// (e.g. the height is really just the ascent + descent of the font), we use measureText:
 			const textMetricsCanvas = document.createElement('canvas');
@@ -230,6 +240,16 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			ctx.textBaseline = "alphabetic";
 			ctx.textAlign = "left";
 			this._textMetrics.boundingBox = ctx.measureText(this._text);
+			try {
+  			ctx.font = this._getTextStyle(false).toFontString();
+  			this._textMetrics.boundingBox = ctx.measureText(this._text);
+        // frmp = fontRenderMaxPx
+        this._textMetrics.frmpLimitedBoundingBox = false;
+			} catch (e) {
+			  ctx.font = this._getTextStyle().toFontString();
+   			this._textMetrics.boundingBox = ctx.measureText(this._text);
+        this._textMetrics.frmpLimitedBoundingBox = true;
+			}
 
 			document.body.removeChild(textMetricsCanvas);
 		}
@@ -295,11 +315,27 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	{
 		if (tight)
 		{
+      this._updateIfNeeded();
 			const textMetrics_px = this.getTextMetrics();
-			let left_px = this._pos[0] - textMetrics_px.boundingBox.actualBoundingBoxLeft;
-			let top_px = this._pos[1] + textMetrics_px.fontProperties.descent - textMetrics_px.boundingBox.actualBoundingBoxDescent;
-			const width_px = textMetrics_px.boundingBox.actualBoundingBoxRight + textMetrics_px.boundingBox.actualBoundingBoxLeft;
-			const height_px = textMetrics_px.boundingBox.actualBoundingBoxAscent + textMetrics_px.boundingBox.actualBoundingBoxDescent;
+      const boundingBoxLeft = textMetrics_px.frmpLimitedBoundingBox ? 
+        textMetrics_px.boundingBox.actualBoundingBoxLeft*this.fontRenderMaxScalar : 
+        textMetrics_px.boundingBox.actualBoundingBoxLeft;
+      const fontPropertiesDescent = textMetrics_px.frmpLimitedTextMetrics ? 
+        textMetrics_px.fontProperties.descent * this.fontRenderMaxScalar :
+        textMetrics_px.fontProperties.descent;
+      const boundingBoxDescent = textMetrics_px.frmpLimitedBoundingBox ?
+        textMetrics_px.boundingBox.actualBoundingBoxDescent * this.fontRenderMaxScalar :
+        textMetrics_px.boundingBox.actualBoundingBoxDescent;
+      const boundingBoxRight = textMetrics_px.frmpLimitedBoundingBox ?
+        textMetrics_px.boundingBox.actualBoundingBoxRight * this.fontRenderMaxScalar :
+        textMetrics_px.boundingBox.actualBoundingBoxRight;
+      const boundingBoxAscent = textMetrics_px.frmpLimitedBoundingBox ?
+        textMetrics_px.boundingBox.actualBoundingBoxAscent * this.fontRenderMaxScalar :
+        textMetrics_px.boundingBox.actualBoundingBoxAscent
+			let left_px = this._pos[0] - boundingBoxLeft;
+			let top_px = this._pos[1] + fontPropertiesDescent - boundingBoxDescent;
+			const width_px = boundingBoxRight + boundingBoxLeft;
+			const height_px = boundingBoxAscent + boundingBoxDescent;
 
 			// adjust the bounding box position by taking into account the anchoring of the text:
 			const boundingBox_px = this._getBoundingBox_px();
@@ -384,14 +420,20 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	 * @name module:visual.TextStim#_getTextStyle
 	 * @protected
 	 */
-	_getTextStyle()
+	_getTextStyle(downscale=false)
 	{
+    let h = this._height;
+    if (this._psychoJS?.fontRenderMaxPx && h > this._psychoJS.fontRenderMaxPx) {
+      this.fontRenderMaxScalar = Math.ceil(h / this._psychoJS.fontRenderMaxPx)
+    }
+    if (downscale) h = h/this.fontRenderMaxScalar;
+    
 		return new PIXI.TextStyle({
 			fontFamily: this._font,
-			fontSize: Math.round(this._getLengthPix(this._height)) + "pt",
+			fontSize: Math.round(this._getLengthPix(h)) + "px",
 			fontWeight: (this._bold) ? "bold" : "normal",
 			fontStyle: (this._italic) ? "italic" : "normal",
-			fill: this.getContrastedColor(new Color(this._color), this._contrast).hex,
+      fill: this.getContrastedColor(new Color(this._color), this._contrast).hex,
 			align: this._alignHoriz,
 			wordWrap: (typeof this._wrapWidth !== "undefined"),
 			wordWrapWidth: (typeof this._wrapWidth !== "undefined") ? this._getHorLengthPix(this._wrapWidth) : 0,
@@ -423,12 +465,20 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		}
 	}
 
-	setPadding(padding)
+	setPadding(padding, log = false)
 	{
-		const heightPx = Math.abs(this.getBoundingBox(true).height);
+    const heightPx = this.height ?? this._height;
 		const paddingPx = heightPx*padding;
-		// if (padding) console.log(`\nRequested padding ratio: ${padding}\npaddingPx: ${paddingPx}\nheight: ${heightPx}`);
-		this._padding = paddingPx;
+		const hasChanged = this._setAttribute("padding", paddingPx, log);
+
+		if (hasChanged)
+		{
+			if (typeof this._pixi !== "undefined")
+			{
+				this._pixi.style = this._getTextStyle();
+				this._needUpdate = true;
+			}
+		}
 	}
 
 	/**
@@ -492,10 +542,16 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 
 			if (typeof this._pixi !== "undefined")
 			{
-				this._pixi.destroy(true);
+		     this._pixi.destroy(true);
 			}
-			this._pixi = new PIXI.Text(this._text, this._getTextStyle());
-			// TODO is updateText necessary?
+      if (this.getHeight() > this._psychoJS.fontRenderMaxPx) {
+        const textStyle = this._getTextStyle(true);
+        this._pixi = new PIXI.Text(this._text, textStyle);
+        this._pixi.width = this._pixi.width * this.fontRenderMaxScalar;
+        this._pixi.height = this._pixi.height * this.fontRenderMaxScalar;
+      } else {
+        this._pixi = new PIXI.Text(this._text, this._getTextStyle());
+      }
 			// this._pixi.updateText();
 		}
 
@@ -570,21 +626,13 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		return anchor;
 	}
 
-	scaleToHeightPx(h)
-	{
-		this.setHeight(h);
-		this.refresh();
-		this._updateIfNeeded();
-		const measured = Math.abs(this.getBoundingBox(true).height);
-		const s = h / measured;
-		this.setHeight(s * h)
+  scaleToHeightPx(h, characterSetHeight) {
+    this.setHeight(h*characterSetHeight);
 	}
 
 	scaleToWidthPx(h, w)
 	{
 		this.setHeight(h);
-		this.refresh();
-		this._updateIfNeeded();
 		const measured = this.getBoundingBox(true).width;
 		const s = h / measured;
 		this.setHeight(s * w);

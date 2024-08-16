@@ -116,8 +116,10 @@ export class PsychoJS
 		collectIP = false,
 		hosts = [],
 		topLevelStatus = true,
+		fontRenderMaxPx = undefined,
 	} = {})
 	{
+    this.fontRenderMaxPx = fontRenderMaxPx;
 		// logging:
 		this._logger = new Logger(this, (debug) ? log4javascript.Level.DEBUG : log4javascript.Level.INFO);
 		this._captureErrors();
