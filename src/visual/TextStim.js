@@ -202,6 +202,8 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		{
 			this._psychoJS.experimentLogger.exp(`Created ${this.name} = ${this.toString()}`);
 		}
+		const text_style = this._getTextStyle(true, false);
+		PIXI.BitmapFont.from(this._font, text_style);
 	}
 
 	/**
@@ -549,8 +551,6 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			}
       if (this.getHeight() > this._psychoJS.fontRenderMaxPx) {
 		// changing pixi.text to pixi.bitmapText
-		const text_style = this._getTextStyle(true, false);
-		PIXI.BitmapFont.from(this._font, text_style);
 		this._pixi = new PIXI.BitmapText(this._text, {
 			fontName: this._font,
 			// fontSize: text_style.fontSize * this.fontRenderMaxScalar,
