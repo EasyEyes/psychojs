@@ -147,7 +147,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			this._onChange(true, true),
 		);
 		this._addAttribute(
-			"padding",
+			"targetPadding",
 			 padding, 
 			 0, 
 			 onChange(true, true, true));
@@ -449,7 +449,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			wordWrap: (typeof this._wrapWidth !== "undefined"),
 			wordWrapWidth: (typeof this._wrapWidth !== "undefined") ? this._getHorLengthPix(this._wrapWidth) : 0,
 			breakWords: this._isInstruction,
-			padding: this._padding || 0,
+			padding: this._targetPadding || 0,
 			letterSpacing: this._letterSpacing,
 		});
 	}
