@@ -438,7 +438,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
       fontSize = fontSize + "px";
     }
   }
-    
+
 		return new PIXI.TextStyle({
 			fontFamily: this._font,
 			fontSize: fontSize,
@@ -480,7 +480,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	{
     const heightPx = this.height ?? this._height;
 		const paddingPx = heightPx*padding;
-		const hasChanged = this._setAttribute("padding", paddingPx, log);
+		const hasChanged = this._setAttribute("targetPadding", paddingPx, log);
 
 		if (hasChanged)
 		{
