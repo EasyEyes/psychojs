@@ -431,7 +431,13 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
     // }
     // if (downscale) h = h/this.fontRenderMaxScalar;
 	let fontSize = Math.round(this._getLengthPix(h)); 
-	if (useStringForFontSize) fontSize = fontSize + "px"; // BitmapFont.from() requires fontSize to be a number instead of a string
+  if (useStringForFontSize) { // BitmapFont.from() requires fontSize to be a number instead of a string
+    if (this._isInstruction) {
+      fontSize = fontSize + "pt";
+    } else {
+      fontSize = fontSize + "px";
+    }
+  }
     
 		return new PIXI.TextStyle({
 			fontFamily: this._font,
