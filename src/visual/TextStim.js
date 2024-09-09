@@ -558,14 +558,14 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
       if (this.getHeight() > this._psychoJS.fontRenderMaxPx) {
 		this._pixi = new PIXI.Text(this._text, this._getTextStyle());
 		// changing pixi.text to pixi.bitmapText
-		// this._pixi = new PIXI.BitmapText(this._text, {
-		// 	fontName: this._font,
-		// 	// fontSize: text_style.fontSize * this.fontRenderMaxScalar,
-		//   });
-		//  console.log("BitmapText", this._pixi);
+		this._pixi = new PIXI.BitmapText(this._text, {
+			fontName: this._font,
+			// fontSize: text_style.fontSize * this.fontRenderMaxScalar,
+		  });
+		 console.log("BitmapText", this._pixi);
 
-		//  this.pixi.scale.x = this.pixi.scale.x * this.fontRenderMaxScalar;
-		//  this.pixi.scale.y = this.pixi.scale.y * this.fontRenderMaxScalar;
+		 this.pixi.scale.x = this.pixi.scale.x * this.fontRenderMaxScalar;
+		 this.pixi.scale.y = this.pixi.scale.y * this.fontRenderMaxScalar;
       } else {
 		this._pixi = new PIXI.Text(this._text, this._getTextStyle());
       }
