@@ -13,7 +13,6 @@ import { ColorMixin } from "../util/ColorMixin.js";
 import { to_pixiPoint } from "../util/Pixi.js";
 import * as util from "../util/Util.js";
 import { VisualStim } from "./VisualStim.js";
-import { font, fontSize } from "../../../components/global.js";
 
 /**
  * @name module:visual.TextStim
@@ -81,6 +80,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			padding = 0,
 			characterSet = "|ÉqÅ",
 			letterSpacing,
+			medialShape,
 		} = {},
 	)
 	{
@@ -192,6 +192,13 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			1.0,
 			this._onChange(true, false, false),
 		);
+    this._addAttribute(
+      "medialShape", 
+      medialShape, 
+      false, 
+      this._onChange(true, true, true)
+    ); 
+    
 
 		// estimate the bounding box (using TextMetrics):
 		this._estimateBoundingBox();
@@ -223,12 +230,12 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			PIXI.TextMetrics.HEIGHT_MULTIPLIER = 12; // 12 // 2 
 			// PIXI.TextMetrics.BASELINE_SYMBOL = 'M';
 			PIXI.TextMetrics.METRICS_STRING = this._characterSet;
-      this._textMetrics = PIXI.TextMetrics.measureText(this._text, this._getTextStyle());
+      this._textMetrics = PIXI.TextMetrics.measureText(this.getText(), this._getTextStyle());
 			try {
-  	       this._textMetrics = PIXI.TextMetrics.measureText(this._text, this._getTextStyle(false));
+  	       this._textMetrics = PIXI.TextMetrics.measureText(this.getText(), this._getTextStyle(false));
 				   this._textMetrics.frmpLimitedTextMetrics = false;
 			} catch (e) {
-           this._textMetrics = PIXI.TextMetrics.measureText(this._text, this._getTextStyle());
+           this._textMetrics = PIXI.TextMetrics.measureText(this.getText(), this._getTextStyle());
            // Using an approximated textMetrics, ie scaled down by this.fontRenderMaxScalar
            this._textMetrics.frmpLimitedTextMetrics = true;
 			}
@@ -242,15 +249,15 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			ctx.font = this._getTextStyle().toFontString();
 			ctx.textBaseline = "alphabetic";
 			ctx.textAlign = "left";
-			this._textMetrics.boundingBox = ctx.measureText(this._text);
+			this._textMetrics.boundingBox = ctx.measureText(this.getText());
 			try {
   			ctx.font = this._getTextStyle(false).toFontString();
-  			this._textMetrics.boundingBox = ctx.measureText(this._text);
+  			this._textMetrics.boundingBox = ctx.measureText(this.getText());
         // frmp = fontRenderMaxPx
         this._textMetrics.frmpLimitedBoundingBox = false;
 			} catch (e) {
 			  ctx.font = this._getTextStyle().toFontString();
-   			this._textMetrics.boundingBox = ctx.measureText(this._text);
+   			this._textMetrics.boundingBox = ctx.measureText(this.getText());
         this._textMetrics.frmpLimitedBoundingBox = true;
 			}
 
@@ -558,16 +565,15 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
       if (this.getHeight() > this._psychoJS.fontRenderMaxPx) {
 		this._pixi = new PIXI.Text(this._text, this._getTextStyle());
 		// changing pixi.text to pixi.bitmapText
-		this._pixi = new PIXI.BitmapText(this._text, {
+		this._pixi = new PIXI.BitmapText(this.getText(), {
 			fontName: this._font,
 			// fontSize: text_style.fontSize * this.fontRenderMaxScalar,
 		  });
-		 console.log("BitmapText", this._pixi);
 
 		 this.pixi.scale.x = this.pixi.scale.x * this.fontRenderMaxScalar;
 		 this.pixi.scale.y = this.pixi.scale.y * this.fontRenderMaxScalar;
       } else {
-		this._pixi = new PIXI.Text(this._text, this._getTextStyle());
+		this._pixi = new PIXI.Text(this.getText(), this._getTextStyle());
       }
 			// this._pixi.updateText();
 		}
@@ -663,6 +669,9 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 				this.scaleToHeightPx(nominalHeight)
 			}
 		*/
+	}
+	getText(){
+	  return this._medialShape ? `\u200d${this._text}\u200d` : this._text;
 	}
 }
 
