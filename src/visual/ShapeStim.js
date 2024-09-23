@@ -92,7 +92,7 @@ export class ShapeStim extends util.mix(VisualStim).with(ColorMixin, WindowMixin
 		this._addAttribute(
 			"fillColor",
 			fillColor,
-			undefined,
+			null,
 			this._onChange(true, false),
 		);
 		this._addAttribute(

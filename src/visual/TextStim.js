@@ -437,8 +437,8 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
     //   this.fontRenderMaxScalar = Math.ceil(h / this._psychoJS.fontRenderMaxPx)
     // }
     // if (downscale) h = h/this.fontRenderMaxScalar;
-	let fontSize = Math.round(this._getLengthPix(h)); 
-  if (useStringForFontSize) { // BitmapFont.from() requires fontSize to be a number instead of a string
+  	let fontSize = Math.round(this._getLengthPix(h)); 
+    if (useStringForFontSize) { // BitmapFont.from() requires fontSize to be a number instead of a string
     if (this._isInstruction) {
       fontSize = fontSize + "pt";
     } else {
@@ -573,7 +573,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		 this.pixi.scale.x = this.pixi.scale.x * this.fontRenderMaxScalar;
 		 this.pixi.scale.y = this.pixi.scale.y * this.fontRenderMaxScalar;
       } else {
-		this._pixi = new PIXI.Text(this.getText(), this._getTextStyle());
+    		this._pixi = new PIXI.Text(this.getText(), this._getTextStyle());
       }
 			// this._pixi.updateText();
 		}
@@ -671,7 +671,16 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		*/
 	}
 	getText(){
-	  return this._medialShape ? `\u200d${this._text}\u200d` : this._text;
+    if (!this._medialShape) return this._text;
+    // NOTE joining this._text only between '\u200d' only shapes to connect form
+    //      on a single side, if alignHoriz !== "left". Adding \u200F 
+    //      (right-to-left mark) is required
+    //      (in this context, but not in HTML text, afaik) to correctly get medial
+    //      form. See https://bugzilla.mozilla.org/show_bug.cgi?id=1108179
+    const medialText = this._alignHoriz !== "left" ? 
+      `\u200F\u200d${this._text}\u200d\u200F`:
+      `\u200d${this._text}\u200d`; 
+    return medialText;
 	}
 }
 
