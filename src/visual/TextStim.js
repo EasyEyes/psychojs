@@ -43,7 +43,7 @@ import { VisualStim } from "./VisualStim.js";
  * @param {boolean} [options.autoDraw= false] - whether or not the stimulus should be automatically drawn on every frame flip
  * @param {boolean} [options.autoLog= false] - whether or not to log
  * @param {boolean} isInstruction
- * @param {number} padding
+ * @param {number} padding [options.padding = 0] - Multiplier (ie multiplied by `height`) to get px padding of stim, used for expansive fonts
  * @param {string} characterSet
  * @param {number} letterSpacing - letter spacing aka letter tracking
  * 
@@ -147,11 +147,6 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			this._onChange(true, true),
 		);
 		this._addAttribute(
-			"targetPadding",
-			 padding, 
-			 0, 
-			 onChange(true, true, true));
-		this._addAttribute(
 			"letterSpacing",
 			letterSpacing, 
 			0, 
@@ -162,6 +157,11 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			this._getDefaultLetterHeight(),
 			onChange(true, true, true),
 		);
+		this._addAttribute(
+			"padding",
+			 padding, 
+			 0, 
+			 onChange(true, true, true));
 		this._addAttribute(
 			"wrapWidth",
 			wrapWidth,
@@ -451,12 +451,12 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			fontSize: fontSize,
 			fontWeight: (this._bold) ? "bold" : "normal",
 			fontStyle: (this._italic) ? "italic" : "normal",
-      fill: this.getContrastedColor(new Color(this._color), this._contrast).hex,
+			fill: this.getContrastedColor(new Color(this._color), this._contrast).hex,
 			align: this._alignHoriz,
 			wordWrap: (typeof this._wrapWidth !== "undefined"),
 			wordWrapWidth: (typeof this._wrapWidth !== "undefined") ? this._getHorLengthPix(this._wrapWidth) : 0,
 			breakWords: this._isInstruction,
-			padding: this._targetPadding || 0,
+			padding: this._padding * h || 0,
 			letterSpacing: this._letterSpacing,
 		});
 	}
@@ -483,21 +483,27 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		}
 	}
 
-	setPadding(padding, log = false)
-	{
-    const heightPx = this.height ?? this._height;
-		const paddingPx = heightPx*padding;
-		const hasChanged = this._setAttribute("targetPadding", paddingPx, log);
+	/**
+	 * Keeping with the convention defined in the EE glossary, `padding` is
+	 * a scalar, that will be multiplied by height when applied (ie in this.getTextStyle).
+	 * Previously it was necessary to write out this function, now it's redundant (ie it
+	 * just does the default behavior)
+	 * @param {Number} padding 
+	 * @param {Boolean} log 
+	 */
+	// setPadding(padding, log = false)
+	// {
+	// 	const hasChanged = this._setAttribute("padding", padding, log);
 
-		if (hasChanged)
-		{
-			if (typeof this._pixi !== "undefined")
-			{
-				this._pixi.style = this._getTextStyle();
-				this._needUpdate = true;
-			}
-		}
-	}
+	// 	if (hasChanged)
+	// 	{
+	// 		if (typeof this._pixi !== "undefined")
+	// 		{
+	// 			this._pixi.style = this._getTextStyle();
+	// 			this._needUpdate = true;
+	// 		}
+	// 	}
+	// }
 
 	/**
 	 * Setter for the letterSpacing attribute 
