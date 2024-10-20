@@ -222,7 +222,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	 * @name module:visual.TextStim#getTextMetrics
 	 * @public
 	 */
-	getTextMetrics()
+	getTextMetrics(baseline="alphabetic", textAlign="left")
 	{
 		if (typeof this._textMetrics === "undefined")
 		{
@@ -247,8 +247,8 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 
 			const ctx = textMetricsCanvas.getContext("2d");
 			ctx.font = this._getTextStyle().toFontString();
-			ctx.textBaseline = "alphabetic";
-			ctx.textAlign = "left";
+			ctx.textBaseline = baseline;
+			ctx.textAlign = textAlign;
 			this._textMetrics.boundingBox = ctx.measureText(this.getText());
 			try {
   			ctx.font = this._getTextStyle(false).toFontString();
@@ -571,13 +571,13 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
       if (this.getHeight() > this._psychoJS.fontRenderMaxPx) {
 		this._pixi = new PIXI.Text(this._text, this._getTextStyle());
 		// changing pixi.text to pixi.bitmapText
-		this._pixi = new PIXI.BitmapText(this.getText(), {
-			fontName: this._font,
-			// fontSize: text_style.fontSize * this.fontRenderMaxScalar,
-		  });
+		// this._pixi = new PIXI.BitmapText(this.getText(), {
+		// 	fontName: this._font,
+		// 	// fontSize: text_style.fontSize * this.fontRenderMaxScalar,
+		//   });
 
-		 this.pixi.scale.x = this.pixi.scale.x * this.fontRenderMaxScalar;
-		 this.pixi.scale.y = this.pixi.scale.y * this.fontRenderMaxScalar;
+		//  this.pixi.scale.x = this.pixi.scale.x * this.fontRenderMaxScalar;
+		//  this.pixi.scale.y = this.pixi.scale.y * this.fontRenderMaxScalar;
       } else {
     		this._pixi = new PIXI.Text(this.getText(), this._getTextStyle());
       }
