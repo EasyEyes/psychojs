@@ -46,6 +46,8 @@ import { VisualStim } from "./VisualStim.js";
  * @param {number} padding [options.padding = 0] - Multiplier (ie multiplied by `height`) to get px padding of stim, used for expansive fonts
  * @param {string} characterSet
  * @param {number} letterSpacing - letter spacing aka letter tracking
+ * @param {string} [options.renderMethod= "1"] - the rendering method ("1" for standard PIXI text (EasyEyesRenderVersion==1), "2" (EasyEyesRenderVersion==2) for SVG-to-image rendering)
+ * @param {string} [options.fontVariationSettings=""]
  * 
  *
  * @todo vertical alignment, and orientation are currently NOT implemented
@@ -81,6 +83,8 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			characterSet = "|ÉqÅ",
 			letterSpacing,
 			medialShape,
+			renderMethod = "1",
+			fontVariationSettings = "",
 		} = {},
 	)
 	{
@@ -192,12 +196,24 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			1.0,
 			this._onChange(true, false, false),
 		);
-    this._addAttribute(
-      "medialShape", 
-      medialShape, 
-      false, 
-      this._onChange(true, true, true)
-    ); 
+		this._addAttribute(
+			"medialShape", 
+			medialShape, 
+			false, 
+			this._onChange(true, true, true)
+		); 
+		this._addAttribute(
+			"renderMethod",
+			renderMethod,
+			"1",
+			onChange(true, true, true),
+		);
+		this._addAttribute(
+			"fontVariationSettings",
+			fontVariationSettings,
+			"",
+			onChange(true, true, true),
+		);
     
 
 		// estimate the bounding box (using TextMetrics):
@@ -463,6 +479,76 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	}
 
 	/**
+	 * Get CSS styles for HTML-based text rendering (SVG method).
+	 *
+	 * @name module:visual.TextStim#_getCSSTextStyle
+	 * @protected
+	 * @return {Object} CSS style properties for HTML div element
+	 */
+	_getCSSTextStyle()
+	{
+		const fontSize = Math.round(this._getLengthPix(this._height));
+		const textColor = this.getContrastedColor(new Color(this._color), this._contrast).hex;
+		const fontFamily = this._font.replace(/\.[^.]+$/, "");
+
+		// Convert letter spacing from PIXI format to CSS
+		const letterSpacingCSS = this._letterSpacing ? this._letterSpacing + "px" : "normal";
+		
+		// Convert padding to CSS format
+		const paddingCSS = (this._padding * fontSize || 0) + "px";
+		
+		// Map PIXI alignment to CSS text-align
+		let textAlign;
+		switch (this._alignHoriz) {
+			case "left":
+				textAlign = "left";
+				break;
+			case "right":
+				textAlign = "right";
+				break;
+			case "center":
+			default:
+				textAlign = "center";
+				break;
+		}
+		
+		// Handle word wrapping
+		const whiteSpace = (typeof this._wrapWidth !== "undefined") ? "normal" : "nowrap";
+		const wordWrapWidth = (typeof this._wrapWidth !== "undefined") ? this._getHorLengthPix(this._wrapWidth) : null;
+		
+		// Handle word breaking for instruction text
+		const wordBreak = this._isInstruction ? "break-word" : "normal";
+		
+		// Build CSS style object
+		const cssStyle = {
+			fontFamily,
+			fontSize: fontSize + "px",
+			fontWeight: this._bold ? "bold" : "normal",
+			fontStyle: this._italic ? "italic" : "normal",
+			color: textColor,
+			textAlign,
+			letterSpacing: letterSpacingCSS,
+			padding: paddingCSS,
+			margin: "0",
+			whiteSpace,
+			wordBreak,
+			lineHeight: "normal",
+			boxSizing: "border-box",
+			fontVariationSettings: this._fontVariationSettings,
+		};
+		console.log("!. font-variation-settings", this._fontVariationSettings);
+		
+		// Add width constraint if word wrapping is enabled
+		if (wordWrapWidth !== null) {
+			cssStyle.width = wordWrapWidth + "px";
+		}
+		
+		return cssStyle;
+	}
+
+
+
+	/**
 	 * Setter for the color attribute.
 	 *
 	 * @name module:visual.TextStim#setColor
@@ -547,6 +633,166 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	}
 
 	/**
+	 * Get the actual bounding box of rendered content by analyzing pixels.
+	 * Used when EasyEyesRenderMethod==2, as we can't rely on measureText/textMetrics
+	 * (ie canvas 2d representation does not support variable fonts) 
+	 *
+	 * @name module:visual.TextStim#_getDerivedBoundingBox
+	 * @protected
+	 * @param {HTMLCanvasElement} canvas - canvas to analyze
+	 * @return {Object|null} bounding box with topLeft and bottomRight coordinates, or null if no content
+	 */
+	_getDerivedBoundingBox(canvas)
+	{
+		const ctx = canvas.getContext('2d');
+		const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+		const data = imageData.data;
+		
+		let minX = canvas.width;
+		let minY = canvas.height;
+		let maxX = -1;
+		let maxY = -1;
+		
+		// Scan all pixels to find non-transparent, non-white content
+		for (let y = 0; y < canvas.height; y++) {
+			for (let x = 0; x < canvas.width; x++) {
+				const index = (y * canvas.width + x) * 4;
+				const r = data[index];     // Red channel
+				const g = data[index + 1]; // Green channel
+				const b = data[index + 2]; // Blue channel
+				const alpha = data[index + 3]; // Alpha channel
+				
+				// Check if pixel is not transparent and not white background
+				if (alpha > 0 && (r !== 255 || g !== 255 || b !== 255)) {
+					if (x < minX) minX = x;
+					if (x > maxX) maxX = x;
+					if (y < minY) minY = y;
+					if (y > maxY) maxY = y;
+				}
+			}
+		}
+		
+		// Return null if no content found
+		if (maxX === -1) {
+			return null;
+		}
+		
+		return {
+			topLeft: { x: minX, y: minY },
+			bottomRight: { x: maxX, y: maxY },
+		};
+	}
+
+	/**
+	 * Create SVG-based text as an image for PIXI Sprite rendering.
+	 *
+	 * @name module:visual.TextStim#_createSVGTextImage
+	 * @protected
+	 * @return {Promise<{canvas: HTMLCanvasElement, boundingBox: Object}>} - canvas and its actual bounding box
+	 */
+	async _createSVGTextImage()
+	{
+		const cssStyle = this._getCSSTextStyle();
+		const textContent = this.getText();
+		
+		// Create SVG with foreign object containing HTML text
+		const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+		const foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
+		const div = document.createElement("div");
+
+		const fontURL = this._getFontURL();
+        if (fontURL) {
+            const style = document.createElementNS("http://www.w3.org/2000/svg", 'style');
+            
+            // Determine font format
+            const ext = fontURL.toLowerCase().split('.').pop();
+            let format = 'woff2';
+            if (ext === 'woff') format = 'woff';
+            else if (ext === 'ttf') format = 'truetype';
+            else if (ext === 'otf') format = 'opentype';
+            
+            // Create @font-face with variations support for variable fonts
+            const cleanFontName = this._font.replace(/\.[^.]+$/, "");
+            style.textContent = `@font-face {
+                font-family: '${cleanFontName}';
+                src: url("${fontURL}") format('${format} supports variations'),
+                     url("${fontURL}") format('${format}-variations'),
+                     url("${fontURL}") format('${format}');
+            }`;
+            svg.appendChild(style);
+            
+            // Wait for font to be available
+            try {
+                await document.fonts.load(`${cssStyle.fontSize} ${cleanFontName}`);
+            } catch (e) {
+                console.warn("Font loading failed:", e);
+            }
+        }
+
+		// Apply CSS styles to the div
+		Object.assign(div.style, cssStyle);
+		div.textContent = textContent;
+		
+		// Measure text dimensions using DOM measurement
+		const measureDiv = div.cloneNode(true);
+		measureDiv.style.position = "absolute";
+		measureDiv.style.visibility = "hidden";
+		measureDiv.style.top = "-9999px";
+		document.body.appendChild(measureDiv);
+		console.log("measureDiv", measureDiv);
+		
+		const rect = measureDiv.getBoundingClientRect();
+		const width = Math.ceil(rect.width);
+		const height = Math.ceil(rect.height);
+		
+		document.body.removeChild(measureDiv);
+		
+		// Set up SVG dimensions - no additional padding needed since CSS padding is already applied
+		const svgWidth = width;
+		const svgHeight = height;
+		
+		svg.setAttribute("width", svgWidth);
+		svg.setAttribute("height", svgHeight);
+		svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+		
+		foreignObject.setAttribute("width", svgWidth);
+		foreignObject.setAttribute("height", svgHeight);
+		foreignObject.appendChild(div);
+		svg.appendChild(foreignObject);
+
+		// Convert SVG to Blob
+		const svgMarkup = new XMLSerializer().serializeToString(svg);
+		const svgFile = new Blob([svgMarkup], { type: "image/svg+xml" });
+
+		const img = new Image();
+		img.src = URL.createObjectURL(svgFile);
+		await img.decode();
+		URL.revokeObjectURL(img.src);
+		
+		// Create canvas
+		const dpr = window.devicePixelRatio || 1;
+		const canvas = document.createElement("canvas");
+		canvas.width = svgWidth * dpr;
+		canvas.height = svgHeight * dpr;
+		canvas.style.width = `${svgWidth}px`;
+		canvas.style.height = `${svgHeight}px`;
+		
+		const ctx = canvas.getContext("2d");
+		ctx.scale(dpr, dpr);
+		ctx.imageSmoothingEnabled = false;
+		
+		// Draw SVG to canvas
+		ctx.drawImage(img, 0, 0);
+		
+		// Get the actual bounding box of the rendered content
+		const boundingBox = this._getDerivedBoundingBox(canvas);
+		
+		return { canvas, boundingBox };
+	}
+
+
+
+	/**
 	 * Update the stimulus, if necessary.
 	 *
 	 * @name module:visual.TextStim#_updateIfNeeded
@@ -569,21 +815,69 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			{
 		     this._pixi.destroy(true);
 			}
-      if (this.getHeight() > this._psychoJS.fontRenderMaxPx) {
-		this._pixi = new PIXI.Text(this._text, this._getTextStyle());
-		// changing pixi.text to pixi.bitmapText
-		// this._pixi = new PIXI.BitmapText(this.getText(), {
-		// 	fontName: this._font,
-		// 	// fontSize: text_style.fontSize * this.fontRenderMaxScalar,
-		//   });
 
-		//  this.pixi.scale.x = this.pixi.scale.x * this.fontRenderMaxScalar;
-		//  this.pixi.scale.y = this.pixi.scale.y * this.fontRenderMaxScalar;
-      } else {
-    		this._pixi = new PIXI.Text(this.getText(), this._getTextStyle());
-      }
-			// this._pixi.updateText();
+			console.log("!. this._renderMethod", this._renderMethod);
+			if (this._renderMethod == 2) {
+				// Use SVG-to-image rendering method, in order to support variable fonts (ie not limited by Canvas 2D API)
+				this._createSVGTextImage().then(({ canvas, boundingBox }) => {
+					const baseTexture = new PIXI.BaseTexture(canvas);
+					const texture = new PIXI.Texture(baseTexture);
+					console.log("!. texture", texture);
+					this._pixi = PIXI.Sprite.from(texture);
+					console.log("!. Sprite this._pixi", this._pixi);
+					
+					// NOTE this gets overwritten when _applyStandardTransforms called
+					if (boundingBox) {
+						const actualWidth = boundingBox.bottomRight.x - boundingBox.topLeft.x + 1;
+						const actualHeight = boundingBox.bottomRight.y - boundingBox.topLeft.y + 1;
+						const dpr = window.devicePixelRatio || 1;
+						const dim = [actualWidth / dpr, actualHeight / dpr];
+						// // Update bounding box based on actual content size
+						const anchor = this._getAnchor();
+						this._boundingBox = new PIXI.Rectangle(
+							this._pos[0] - anchor[0] * dim[0],
+							this._pos[1] - dim[1] + anchor[1] * dim[1],
+							dim[0],
+							dim[1],
+						);
+					}
+					
+					// Apply standard transforms after async creation
+					this._applyStandardTransforms();
+				}).catch(error => {
+					console.eror("Failed to create SVG text image:", error);
+					throw error;
+				});
+				return; // Exit early since we're handling async creation
+			} else {
+				// Use existing PIXI text rendering method
+				this._createPixiText();
+				this._applyStandardTransforms();
+			}
 		}
+
+	}
+
+	/**
+	 * Create PIXI text object using the standard method.
+	 *
+	 * @name module:visual.TextStim#_createPixiText
+	 * @protected
+	 */
+	_createPixiText()
+	{
+		this._pixi = new PIXI.Text(this._text, this._getTextStyle());
+	}
+
+	/**
+	 * Apply standard transformations to the PIXI object.
+	 *
+	 * @name module:visual.TextStim#_applyStandardTransforms
+	 * @protected
+	 */
+	_applyStandardTransforms()
+	{
+		if (!this._pixi) return;
 
 		const anchor = this._getAnchor();
 		[this._pixi.anchor.x, this._pixi.anchor.y] = anchor;
@@ -688,6 +982,21 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
       `\u200F\u200d${this._text}\u200d\u200F`:
       `\u200d${this._text}\u200d`; 
     return medialText;
+	}
+	_getFontURL()
+	{
+		if (!this._psychoJS?.serverManager?._resources) {
+			return null;
+		}
+
+		// Search for font in ServerManager resources
+		for (const [name, resourceData] of this._psychoJS.serverManager._resources) {
+			const fontName = name.replace(/\.[^.]+$/, ''); // Remove extension
+			if (fontName === this._font || name === this._font) {
+				return resourceData.path;
+			}
+		}
+		return null;
 	}
 }
 
