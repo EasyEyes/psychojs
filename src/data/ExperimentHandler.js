@@ -566,7 +566,7 @@ export class ExperimentHandler extends PsychObject
 	}
 
 	_orderOutput(data, attributes) {
-		if (data.length === 0 || attributes.length === 0 || !this._psychoJS || this._psychoJS.inputParameters.length === 0) return {data: data, attributes: attributes};
+		if (data.length === 0 || attributes.length === 0 || !this._psychoJS) return {data: data, attributes: attributes};
 		const inputParameters = [...this._psychoJS.inputParameters];
 		const excludeAttributes = ["expName", "name", "blockNumber", "_s", "setSession", "targetMeasuredDurationFrames", "label", "!experimentFilename"];
 		attributes = attributes.filter(a => !excludeAttributes.includes(a));
