@@ -81,6 +81,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			characterSet = "|ÉqÅ",
 			letterSpacing,
 			medialShape,
+			language = "en",
 		} = {},
 	)
 	{
@@ -193,12 +194,18 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			this._onChange(true, false, false),
 		);
     this._addAttribute(
-      "medialShape", 
-      medialShape, 
-      false, 
+      "medialShape",
+      medialShape,
+      false,
       this._onChange(true, true, true)
-    ); 
-    
+    );
+    this._addAttribute(
+      "language",
+      language,
+      "en",
+      this._onChange(true, true),
+    );
+
 
 		// estimate the bounding box (using TextMetrics):
 		// this._estimateBoundingBox();
@@ -243,9 +250,11 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			// since PIXI.TextMetrics does not give us the actual bounding box of the text
 			// (e.g. the height is really just the ascent + descent of the font), we use measureText:
 			const textMetricsCanvas = document.createElement('canvas');
+			textMetricsCanvas.setAttribute("lang", this._language || "en");
 			document.body.appendChild(textMetricsCanvas);
 
 			const ctx = textMetricsCanvas.getContext("2d");
+			if ("lang" in ctx) ctx.lang = this._language || "en";
 			ctx.font = this._getTextStyle().toFontString();
 			ctx.textBaseline = baseline;
 			ctx.textAlign = textAlign;
@@ -569,6 +578,14 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			{
 		     this._pixi.destroy(true);
 			}
+      // Apply language to PIXI's internal canvas before text is rendered.
+      // PIXI's Text constructor is lazy: it stores text/style (setting dirty=true)
+      // but does NOT call updateText(). The first render happens lazily when
+      // _render(), updateTransform(), or getBounds() is called. We set the lang
+      // attribute on the canvas here and call updateText() ourselves so that the
+      // browser text shaping (locl) respects the language tag from the start.
+      const lang = this._language || "en";
+
       if (this.getHeight() > this._psychoJS.fontRenderMaxPx) {
 		this._pixi = new PIXI.Text(this._text, this._getTextStyle());
 		// changing pixi.text to pixi.bitmapText
@@ -582,7 +599,19 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
       } else {
     		this._pixi = new PIXI.Text(this.getText(), this._getTextStyle());
       }
-			// this._pixi.updateText();
+
+			// Set language on PIXI's internal canvas for locl shaping, then render
+			const pixiCanvas = this._pixi.canvas ||
+				(this._pixi.context && this._pixi.context.canvas);
+			if (pixiCanvas) {
+				pixiCanvas.setAttribute("lang", lang);
+				try {
+					const pixiCtx = pixiCanvas.getContext("2d");
+					if (pixiCtx && "lang" in pixiCtx) pixiCtx.lang = lang;
+				} catch (e) { /* ignore */ }
+				// This is the first render — PIXI constructor is lazy, dirty is true
+				this._pixi.updateText(true);
+			}
 		}
 
 		const anchor = this._getAnchor();
