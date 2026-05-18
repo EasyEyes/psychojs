@@ -1,0 +1,15 @@
+diff --git a/node_modules/pixi.js/dist/browser/pixi.js b/node_modules/pixi.js/dist/browser/pixi.js
+index 1639ac2..d7d782a 100644
+--- a/node_modules/pixi.js/dist/browser/pixi.js
++++ b/node_modules/pixi.js/dist/browser/pixi.js
+@@ -31502,6 +31502,10 @@ var PIXI = (function (exports) {
+           var width = Math.ceil(context.measureText(metricsString).width);
+           var baseline = Math.ceil(context.measureText(TextMetrics.BASELINE_SYMBOL).width);
+           var height = Math.ceil(TextMetrics.HEIGHT_MULTIPLIER * baseline);
++          if (width === 0 || height === 0) {
++              TextMetrics._fonts[font] = properties;
++              return properties;
++          }
+           baseline = baseline * TextMetrics.BASELINE_MULTIPLIER | 0;
+           canvas.width = width;
+           canvas.height = height;

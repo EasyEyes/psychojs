@@ -1,0 +1,15 @@
+diff --git a/node_modules/@pixi/text/dist/esm/text.mjs b/node_modules/@pixi/text/dist/esm/text.mjs
+index 8183ebe..a5d4be9 100644
+--- a/node_modules/@pixi/text/dist/esm/text.mjs
++++ b/node_modules/@pixi/text/dist/esm/text.mjs
+@@ -1163,6 +1163,10 @@ var TextMetrics = /** @class */ (function () {
+         var width = Math.ceil(context.measureText(metricsString).width);
+         var baseline = Math.ceil(context.measureText(TextMetrics.BASELINE_SYMBOL).width);
+         var height = Math.ceil(TextMetrics.HEIGHT_MULTIPLIER * baseline);
++        if (width === 0 || height === 0) {
++            TextMetrics._fonts[font] = properties;
++            return properties;
++        }
+         baseline = baseline * TextMetrics.BASELINE_MULTIPLIER | 0;
+         canvas.width = width;
+         canvas.height = height;
