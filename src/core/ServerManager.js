@@ -14,6 +14,7 @@ import { PsychObject } from "../util/PsychObject.js";
 import * as util from "../util/Util.js";
 import { Scheduler } from "../util/Scheduler.js";
 import { PsychoJS } from "./PsychoJS.js";
+export { _retryablePavloviaPost } from "./retryablePavloviaPost.js";
 
 /**
  * <p>This manager handles all communications between the experiment running in the participant's browser and the [pavlovia.org]{@link http://pavlovia.org} server, <em>in an asynchronous manner</em>.</p>
@@ -1472,3 +1473,4 @@ ServerManager.ResourceStatus = {
 	 */
 	DOWNLOADED: Symbol.for("DOWNLOADED"),
 };
+
