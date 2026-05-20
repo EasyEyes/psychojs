@@ -1,7 +1,10 @@
 module.exports = {
   preset: "ts-jest/presets/js-with-ts-esm",
   testEnvironment: "node",
+  setupFiles: ["./jest.setup.cjs"],
   moduleNameMapper: {
+    // Intercept imports that escape the psychojs package (../../../components/..., etc.)
+    "^\\.\\./\\.\\./\\.\\./": "<rootDir>/src/__mocks__/external.js",
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
   transform: {
