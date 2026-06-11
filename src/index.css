@@ -57,11 +57,12 @@ a:hover {
 }
 
 .ui-dialog {
-  left: auto !important;
-  margin: auto;
+  left: 50% !important;
+  margin: 0 !important;
   max-width: 88vw;
-  position: relative;
-  top: auto !important;
+  position: fixed !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%);
 }
 
 .ui-dialog .ui-dialog-titlebar {
