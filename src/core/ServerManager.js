@@ -14,6 +14,8 @@ import { PsychObject } from "../util/PsychObject.js";
 import * as util from "../util/Util.js";
 import { Scheduler } from "../util/Scheduler.js";
 import { PsychoJS } from "./PsychoJS.js";
+import { _retryablePavloviaPost } from "./retryablePavloviaPost.js";
+export { _retryablePavloviaPost };
 
 /**
  * <p>This manager handles all communications between the experiment running in the participant's browser and the [pavlovia.org]{@link http://pavlovia.org} server, <em>in an asynchronous manner</em>.</p>
@@ -723,7 +725,7 @@ export class ServerManager extends PsychObject
 	 *
 	 * @returns {Promise<ServerManager.UploadDataPromise>} the response
 	 */
-	uploadData(key, value, sync = false)
+	async uploadData(key, value, sync = false)
 	{
 		const response = {
 			origin: "ServerManager.uploadData",
@@ -737,46 +739,34 @@ export class ServerManager extends PsychObject
 			+ "/api/v2/experiments/" + encodeURIComponent(this._psychoJS.config.experiment.fullpath)
 			+ "/sessions/" + this._psychoJS.config.session.token
 			+ "/results";
-		console.log("!. ~ file: ServerManager.js:737 ~ url:", url);
 
-		// synchronous query the pavlovia server:
+		// synchronous query the pavlovia server (fire-and-forget, cannot be retried):
 		if (sync)
 		{
 			const formData = new FormData();
 			formData.append("key", key);
 			formData.append("value", value);
 			navigator.sendBeacon(url, formData);
+			return;
 		}
-		// asynchronously query the pavlovia server:
-		else
+
+		// asynchronously query the pavlovia server with retry:
+		const data = {
+			key,
+			value,
+		};
+
+		try
 		{
-			const self = this;
-			return new Promise((resolve, reject) =>
-			{
-				const data = {
-					key,
-					value,
-				};
-
-				jQuery.post(url, data, null, "json")
-					.done((serverData, textStatus) =>
-					{
-						self.setStatus(ServerManager.Status.READY);
-						resolve(Object.assign(response, { serverData }));
-					})
-					.fail((jqXHR, textStatus, errorThrown) =>
-					{
-						self.setStatus(ServerManager.Status.ERROR);
-
-						const errorMsg = util.getRequestError(jqXHR, textStatus, errorThrown);
-						console.error("error:", errorMsg);
-
-						// Include more detailed error information in the rejection
-						const jqXHRStatus = jqXHR && jqXHR.status ? jqXHR.status : "";
-						const detailedError = `${errorMsg} (HTTP ${jqXHRStatus}: ${textStatus})`;
-						reject(Object.assign(response, { error: detailedError }));
-					});
-			});
+			const serverData = await _retryablePavloviaPost(url, data);
+			this.setStatus(ServerManager.Status.READY);
+			return Object.assign(response, { serverData });
+		}
+		catch (error)
+		{
+			this.setStatus(ServerManager.Status.ERROR);
+			console.error("error:", error);
+			throw Object.assign(response, { error });
 		}
 	}
 
@@ -790,7 +780,7 @@ export class ServerManager extends PsychObject
 	 * @param {boolean} [compressed=false] - whether or not the logs are compressed
 	 * @returns {Promise<ServerManager.UploadDataPromise>} the response
 	 */
-	uploadLog(logs, compressed = false)
+	async uploadLog(logs, compressed = false)
 	{
 		const response = {
 			origin: "ServerManager.uploadLog",
@@ -808,7 +798,6 @@ export class ServerManager extends PsychObject
 			? info.ProlificParticipantID
 			: undefined;
 
-		// const experimentName = (typeof info.expName !== "undefined") ? info.expName : this.psychoJS.config.experiment.name;
 		const experimentName = this.psychoJS.config.experiment.name;
 
 		const session = info.session || "SESSION";
@@ -817,7 +806,6 @@ export class ServerManager extends PsychObject
 				? info.date
 				: MonotonicClock.getDateStr();
 
-		// const filename = participant + "_" + experimentName + "_" + datetime + ".log";
 		const filename = `${participant}_${
 			prolificParticipant ? `${prolificParticipant}_` : ""
 		}${experimentName}_${session}_${datetime}.log`;
@@ -828,31 +816,23 @@ export class ServerManager extends PsychObject
 			compressed,
 		};
 
-		// query the pavlovia server:
-		const self = this;
-		return new Promise((resolve, reject) =>
+		const url = this._psychoJS.config.pavlovia.URL
+			+ "/api/v2/experiments/" + encodeURIComponent(this._psychoJS.config.experiment.fullpath)
+			+ "/sessions/" + this._psychoJS.config.session.token
+			+ "/logs";
+
+		try
 		{
-			const url = self._psychoJS.config.pavlovia.URL
-				+ "/api/v2/experiments/" + encodeURIComponent(self._psychoJS.config.experiment.fullpath)
-				+ "/sessions/" + self._psychoJS.config.session.token
-				+ "/logs";
-
-			jQuery.post(url, data, null, "json")
-				.done((serverData, textStatus) =>
-				{
-					self.setStatus(ServerManager.Status.READY);
-					resolve(Object.assign(response, { serverData }));
-				})
-				.fail((jqXHR, textStatus, errorThrown) =>
-				{
-					self.setStatus(ServerManager.Status.ERROR);
-
-					const errorMsg = util.getRequestError(jqXHR, textStatus, errorThrown);
-					console.error("error:", errorMsg);
-
-					reject(Object.assign(response, { error: errorMsg }));
-				});
-		});
+			const serverData = await _retryablePavloviaPost(url, data);
+			this.setStatus(ServerManager.Status.READY);
+			return Object.assign(response, { serverData });
+		}
+		catch (error)
+		{
+			this.setStatus(ServerManager.Status.ERROR);
+			console.error("error:", error);
+			throw Object.assign(response, { error });
+		}
 	}
 
 	/****************************************************************************
@@ -1472,3 +1452,4 @@ ServerManager.ResourceStatus = {
 	 */
 	DOWNLOADED: Symbol.for("DOWNLOADED"),
 };
+

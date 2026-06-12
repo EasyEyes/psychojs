@@ -479,13 +479,14 @@ export class PsychoJS
 	 * @public
 	 */
 	async quit({
-	 message, 
-	 isCompleted = false, 
-	 okText = "OK", 
-	 okUrl = undefined, 
-	 additionalCSVData = [], 
-	 cursorTrackingData = [], 
-	 showSafeToCloseDialog = true, 
+	 message,
+	 isCompleted = false,
+	 skipSave = false,
+	 okText = "OK",
+	 okUrl = undefined,
+	 additionalCSVData = [],
+	 cursorTrackingData = [],
+	 showSafeToCloseDialog = true,
 	 safeTocloseMessage= "Thank you. It's now safe to close this browser tab.",
 	 doNotCloseMessage = "<b>Thank you. You're done. DO NOT CLOSE THIS WINDOW.</b> It will close once your data are safely saved. Closing this window will prevent saving of your data, and they will be lost. This may take a few minutes. Thank you for your patience."
 	} = {})
@@ -513,7 +514,7 @@ export class PsychoJS
 			// 	showOK: false,
 			// });
 			this.gui.displayMessage({message:null,warning: doNotCloseMessage, error : null})
-			if (isCompleted || this._config.experiment.saveIncompleteResults)
+			if (!skipSave && (isCompleted || this._config.experiment.saveIncompleteResults))
 			{
 				if (!this._serverMsg.has("__noOutput"))
 				{
