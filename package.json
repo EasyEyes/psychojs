@@ -32,6 +32,7 @@
   "dependencies": {
     "howler": "^2.2.3",
     "log4javascript": "github:Ritzlgrmft/log4javascript",
+    "p-retry": "^8.0.0",
     "pako": "^1.0.11",
     "pixi.js-legacy": "^6.5.8",
     "seedrandom": "^3.0.5",

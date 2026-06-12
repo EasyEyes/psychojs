@@ -8,6 +8,7 @@
  */
 
 import { Howl } from "howler";
+import pRetry from "p-retry";
 import { ExperimentHandler } from "../data/ExperimentHandler.js";
 import { Clock, MonotonicClock } from "../util/Clock.js";
 import { PsychObject } from "../util/PsychObject.js";
@@ -751,31 +752,55 @@ export class ServerManager extends PsychObject
 		else
 		{
 			const self = this;
-			return new Promise((resolve, reject) =>
+			const data = { key, value };
+
+			return pRetry(
+				() => new Promise((resolve, reject) =>
+				{
+					jQuery.post(url, data, null, "json")
+						.done((serverData) =>
+						{
+							resolve(serverData);
+						})
+						.fail((jqXHR, textStatus, errorThrown) =>
+						{
+							const status = jqXHR && jqXHR.status ? jqXHR.status : 0;
+							const errorMsg = util.getRequestError(jqXHR, textStatus, errorThrown);
+							const err = new Error(`${errorMsg} (HTTP ${status}: ${textStatus})`);
+
+							// Do not retry on 4xx client errors — bad token, auth, etc.
+							if (status >= 400 && status < 500)
+							{
+								err.name = "AbortError";
+							}
+
+							reject(err);
+						});
+				}),
+				{
+					retries: 3,
+					minTimeout: 2000, // 2s, then 4s, then 8s
+					factor: 2,
+					onFailedAttempt: (error) =>
+					{
+						console.warn(
+							`ServerManager.uploadData: attempt ${error.attemptNumber} failed — ` +
+							`${error.retriesLeft} retr${error.retriesLeft === 1 ? "y" : "ies"} left. ` +
+							error.message
+						);
+					},
+				}
+			)
+			.then((serverData) =>
 			{
-				const data = {
-					key,
-					value,
-				};
-
-				jQuery.post(url, data, null, "json")
-					.done((serverData, textStatus) =>
-					{
-						self.setStatus(ServerManager.Status.READY);
-						resolve(Object.assign(response, { serverData }));
-					})
-					.fail((jqXHR, textStatus, errorThrown) =>
-					{
-						self.setStatus(ServerManager.Status.ERROR);
-
-						const errorMsg = util.getRequestError(jqXHR, textStatus, errorThrown);
-						console.error("error:", errorMsg);
-
-						// Include more detailed error information in the rejection
-						const jqXHRStatus = jqXHR && jqXHR.status ? jqXHR.status : "";
-						const detailedError = `${errorMsg} (HTTP ${jqXHRStatus}: ${textStatus})`;
-						reject(Object.assign(response, { error: detailedError }));
-					});
+				self.setStatus(ServerManager.Status.READY);
+				return Object.assign(response, { serverData });
+			})
+			.catch((error) =>
+			{
+				self.setStatus(ServerManager.Status.ERROR);
+				console.error("ServerManager.uploadData failed after all retries:", error.message);
+				return Promise.reject(Object.assign(response, { error: error.message }));
 			});
 		}
 	}
