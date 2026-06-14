@@ -159,11 +159,14 @@ export class Window extends PsychObject
 	{
 		// gets updated frame by frame
 		const lastDelta = this.psychoJS.scheduler._lastDelta;
-		const fps = lastDelta === 0 ? 60.0 : 1000 / lastDelta;
+		// `_lastDelta` is undefined before the first frame flip, so guard against
+		// undefined/NaN/0 and fall back to the documented 60.0 default.
+		const fps = !lastDelta ? 60.0 : 1000 / lastDelta;
 
 		return fps;
 	}
 
+	
 	/**
 	 * Take the browser full screen if possible.
 	 *
