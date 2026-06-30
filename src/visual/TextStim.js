@@ -8,6 +8,7 @@
  */
 
 import * as PIXI from "pixi.js-legacy";
+import { applyPunctuationRTL } from "./punctuationRTL.js";
 import { Color } from "../util/Color.js";
 import { ColorMixin } from "../util/ColorMixin.js";
 import { to_pixiPoint } from "../util/Pixi.js";
@@ -587,7 +588,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
       const lang = this._language || "en";
 
       if (this.getHeight() > this._psychoJS.fontRenderMaxPx) {
-		this._pixi = new PIXI.Text(this._text, this._getTextStyle());
+		this._pixi = new PIXI.Text(applyPunctuationRTL(this._text), this._getTextStyle());
 		// changing pixi.text to pixi.bitmapText
 		// this._pixi = new PIXI.BitmapText(this.getText(), {
 		// 	fontName: this._font,
@@ -707,15 +708,18 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		*/
 	}
 	getText(){
-    if (!this._medialShape) return this._text;
-    // NOTE joining this._text only between '\u200d' only shapes to connect form
+    // NOTE: the `.text` property getter delegates here (PsychObject._addAttribute),
+    // so `.text` and `.getText()` are identical — both return the transformed text.
+    const text = applyPunctuationRTL(this._text);
+    if (!this._medialShape) return text;
+    // NOTE joining the text only between '\u200d' only shapes to connect form
     //      on a single side, if alignHoriz !== "left". Adding \u200F 
     //      (right-to-left mark) is required
     //      (in this context, but not in HTML text, afaik) to correctly get medial
     //      form. See https://bugzilla.mozilla.org/show_bug.cgi?id=1108179
     const medialText = this._alignHoriz !== "left" ? 
-      `\u200F\u200d${this._text}\u200d\u200F`:
-      `\u200d${this._text}\u200d`; 
+      `\u200F\u200d${text}\u200d\u200F`:
+      `\u200d${text}\u200d`; 
     return medialText;
 	}
 }
