@@ -389,14 +389,12 @@ export class GUI
 					}
 					try{
 						const BC = status.block_condition
-						let block = 0
+						let block = status.block
 						let condition = ""
-						let trial = 0
+						let trial = status.trial ?? 0
 						let conditionName = ""
 						if(BC){
-							block = status.block
 							condition = status.block_condition.split("_")[1]
-							trial = status.trial
 							conditionName = paramReader.read("conditionName", BC)
 						}
 						const text = `<span style="display:block; margin-top:10px;">
