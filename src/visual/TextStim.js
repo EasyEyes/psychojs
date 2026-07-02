@@ -83,6 +83,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			letterSpacing,
 			medialShape,
 			language = "en",
+			direction = "ltr",
 		} = {},
 	)
 	{
@@ -206,6 +207,12 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
       "en",
       this._onChange(true, true),
     );
+    this._addAttribute(
+      "direction",
+      direction,
+      "ltr",
+      this._onChange(true, true),
+    );
 
 
 		// estimate the bounding box (using TextMetrics):
@@ -252,10 +259,16 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			// (e.g. the height is really just the ascent + descent of the font), we use measureText:
 			const textMetricsCanvas = document.createElement('canvas');
 			textMetricsCanvas.setAttribute("lang", this._language || "en");
+			// Mirror the language tag with a `dir`/`ctx.direction` for writing
+			// direction (rtl otherwise ltr). canvas has no vertical mode, so
+			// vertical-* degrade to ltr.
+			const metricsDir = this._dirFromDirection();
+			textMetricsCanvas.setAttribute("dir", metricsDir);
 			document.body.appendChild(textMetricsCanvas);
 
 			const ctx = textMetricsCanvas.getContext("2d");
 			if ("lang" in ctx) ctx.lang = this._language || "en";
+			ctx.direction = metricsDir;
 			ctx.font = this._getTextStyle().toFontString();
 			ctx.textBaseline = baseline;
 			ctx.textAlign = textAlign;
@@ -473,6 +486,21 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	}
 
 	/**
+	 * Map this stim's `direction` to an HTML/canvas `dir` value ("ltr" or "rtl").
+	 * Only `rtl` is RTL; `ltr` and both `vertical-*` degrade to "ltr" since the
+	 * canvas has no vertical writing mode. Single source for the two canvas sites
+	 * that apply `dir` / `ctx.direction` alongside `lang`.
+	 *
+	 * @name module:visual.TextStim#_dirFromDirection
+	 * @private
+	 * @returns {"ltr"|"rtl"}
+	 */
+	_dirFromDirection()
+	{
+		return this._direction === "rtl" ? "rtl" : "ltr";
+	}
+
+	/**
 	 * Setter for the color attribute.
 	 *
 	 * @name module:visual.TextStim#setColor
@@ -586,6 +614,9 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
       // attribute on the canvas here and call updateText() ourselves so that the
       // browser text shaping (locl) respects the language tag from the start.
       const lang = this._language || "en";
+      // Writing direction for the canvas (rtl otherwise ltr; vertical degrades
+      // to ltr). Mirrors the `lang` application below for uniformity.
+      const renderDir = this._dirFromDirection();
 
       if (this.getHeight() > this._psychoJS.fontRenderMaxPx) {
 		this._pixi = new PIXI.Text(applyPunctuationRTL(this._text), this._getTextStyle());
@@ -606,9 +637,11 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 				(this._pixi.context && this._pixi.context.canvas);
 			if (pixiCanvas) {
 				pixiCanvas.setAttribute("lang", lang);
+				pixiCanvas.setAttribute("dir", renderDir);
 				try {
 					const pixiCtx = pixiCanvas.getContext("2d");
 					if (pixiCtx && "lang" in pixiCtx) pixiCtx.lang = lang;
+					if (pixiCtx) pixiCtx.direction = renderDir;
 				} catch (e) { /* ignore */ }
 				// This is the first render — PIXI constructor is lazy, dirty is true
 				this._pixi.updateText(true);
