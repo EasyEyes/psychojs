@@ -4,18 +4,21 @@
 // (where HTML dir/CSS direction do not apply — reading text is rasterized via
 // PIXI.Text -> Canvas 2D fillText, so the fix must live in the text data).
 //
-// Three punctuation marks, two strategies (per Denis Pelli + glossary):
+// Four terminal-punctuation characters, two strategies (per Denis Pelli + glossary):
 //   - Comma     "," (U+002C) => REPLACED with Arabic comma ، (U+060C)
 //   - Semicolon ";" (U+003B) => REPLACED with Arabic semicolon ؛ (U+061B)
-//   - Period    "." (U+002E) => RTL mark appended
-// All three are FINAL-ONLY (followed by whitespace or end-of-string), so
-// embedded punctuation (3.14, a,b,c, 1,000, a;b) is left untouched.
+//   - Period "." (U+002E) & ellipsis "…" (U+2026) => RTL mark appended
+// All are FINAL-ONLY (followed by whitespace or end-of-string), so embedded
+// punctuation (3.14, a,b,c, 1,000, a;b) is left untouched.
 //
-// Why comma/semicolon are replaced but period is marked: the mark-after
-// approach worked for the period but empirically FAILED for the comma (same
-// bidi class CS — reason unexplained, likely font glyph positioning). The
-// Arabic comma ، and semicolon ؛ are the agreed RTL substitutes. No Arabic
-// period exists, so the period keeps the mark (which works).
+// Why comma/semicolon are replaced but period/ellipsis are marked: the
+// mark-after approach worked for the period but empirically FAILED for the
+// comma (same bidi class CS — reason unexplained, likely font glyph
+// positioning). The Arabic comma ، and semicolon ؛ are the agreed RTL
+// substitutes. No Arabic period OR ellipsis exists, so those keep the mark.
+// (Caveat: U+2026 is bidi class ON, same as the semicolon whose mark failed —
+// the ellipsis mark is the best available lever but is not guaranteed; flagged
+// for empirical testing.)
 //
 // The active mode is module-level state, set once per condition from the
 // EasyEyes layer (components/fonts.js:setFontGlobalState). It is read at
@@ -45,7 +48,8 @@ export const getPunctuationRTL = () => mode;
 /**
  * Apply the fontPunctuationRTL transforms: replace FINAL ASCII comma/semicolon
  * with their Arabic counterparts, and append the active RTL mark after FINAL
- * periods. All three are final-only (followed by whitespace or end-of-string).
+ * periods and ellipses (U+2026). All three are final-only (followed by
+ * whitespace or end-of-string).
  *
  * Idempotent: Arabic comma/semicolon aren't ASCII, so re-running the
  * replacements is a no-op; and the RLM/ALM mark is not whitespace, so a period
@@ -67,5 +71,5 @@ export const applyPunctuationRTL = (text, m = mode) => {
   return String(text)
     .replace(/([,])(?=\s|$)/g, "\u060C") // final , → ، (Arabic comma)
     .replace(/([;])(?=\s|$)/g, "\u061B") // final ; → ؛ (Arabic semicolon)
-    .replace(/(\.)(?=\s|$)/g, `$1${mark}`); // final . → append RTL mark
+    .replace(/([.\u2026])(?=\s|$)/g, `$1${mark}`); // final . or … → append RTL mark
 };

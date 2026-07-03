@@ -637,7 +637,8 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 				(this._pixi.context && this._pixi.context.canvas);
 			if (pixiCanvas) {
 				pixiCanvas.setAttribute("lang", lang);
-				pixiCanvas.setAttribute("dir", renderDir);
+				// NOTE: do NOT set "dir" on PIXI's internal canvas — in Chrome, produces severely clipped text.
+				// ctx.direction below is sufficient(?) and safe in both Chrome and Firefox.
 				try {
 					const pixiCtx = pixiCanvas.getContext("2d");
 					if (pixiCtx && "lang" in pixiCtx) pixiCtx.lang = lang;
