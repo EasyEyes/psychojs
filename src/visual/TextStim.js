@@ -9,6 +9,7 @@
 
 import * as PIXI from "pixi.js-legacy";
 import { applyPunctuationRTL } from "./punctuationRTL.js";
+import { applyDirectionAcrossResizes } from "./canvasTextDirection.js";
 import { Color } from "../util/Color.js";
 import { ColorMixin } from "../util/ColorMixin.js";
 import { to_pixiPoint } from "../util/Pixi.js";
@@ -637,13 +638,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 				(this._pixi.context && this._pixi.context.canvas);
 			if (pixiCanvas) {
 				pixiCanvas.setAttribute("lang", lang);
-				// NOTE: do NOT set "dir" on PIXI's internal canvas — in Chrome, produces severely clipped text.
-				// ctx.direction below is sufficient(?) and safe in both Chrome and Firefox.
-				try {
-					const pixiCtx = pixiCanvas.getContext("2d");
-					if (pixiCtx && "lang" in pixiCtx) pixiCtx.lang = lang;
-					if (pixiCtx) pixiCtx.direction = renderDir;
-				} catch (e) { /* ignore */ }
+				applyDirectionAcrossResizes(pixiCanvas, renderDir, lang);
 				// This is the first render — PIXI constructor is lazy, dirty is true
 				this._pixi.updateText(true);
 			}
