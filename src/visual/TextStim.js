@@ -9,12 +9,15 @@
 
 import * as PIXI from "pixi.js-legacy";
 import { applyPunctuationRTL } from "./punctuationRTL.js";
-import { applyDirectionAcrossResizes } from "./canvasTextDirection.js";
 import { Color } from "../util/Color.js";
 import { ColorMixin } from "../util/ColorMixin.js";
 import { to_pixiPoint } from "../util/Pixi.js";
 import * as util from "../util/Util.js";
 import { VisualStim } from "./VisualStim.js";
+import {
+  applyDirectionAcrossResizes,
+  applyKerningAcrossResizes,
+} from "./canvasContextState.js";
 
 /**
  * @name module:visual.TextStim
@@ -85,6 +88,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			medialShape,
 			language = "en",
 			direction = "ltr",
+			kerning,
 		} = {},
 	)
 	{
@@ -155,6 +159,11 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			letterSpacing, 
 			0, 
 			onChange(true, true, true));	 
+		this._addAttribute(
+			"kerning",
+			kerning,
+			undefined,
+			onChange(true, true, true));
 		this._addAttribute(
 			"height",
 			height,
@@ -633,13 +642,19 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
     		this._pixi = new PIXI.Text(this.getText(), this._getTextStyle());
       }
 
-			// Set language on PIXI's internal canvas for locl shaping, then render
+			// Re-apply EasyEyes ctx state (direction, fontKerning) after PIXI's
+			// updateText() resizes the canvas (which resets all ctx state). See
+			// canvasContextState.js for the mechanism.
 			const pixiCanvas = this._pixi.canvas ||
 				(this._pixi.context && this._pixi.context.canvas);
 			if (pixiCanvas) {
 				pixiCanvas.setAttribute("lang", lang);
 				applyDirectionAcrossResizes(pixiCanvas, renderDir, lang);
-				// This is the first render — PIXI constructor is lazy, dirty is true
+				applyKerningAcrossResizes(pixiCanvas, this._kerning);
+				// Also apply to PIXI's shared sizing canvas so text is measured
+				// with the same kerning it's rendered with (else kerning=none
+				// clips the right edge, e.g. "AV").
+				applyKerningAcrossResizes(PIXI.TextMetrics._canvas, this._kerning);
 				this._pixi.updateText(true);
 			}
 		}
