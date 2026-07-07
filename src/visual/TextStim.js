@@ -17,6 +17,7 @@ import { VisualStim } from "./VisualStim.js";
 import {
   applyDirectionAcrossResizes,
   applyKerningAcrossResizes,
+  applyTextRenderingAcrossResizes,
 } from "./canvasContextState.js";
 
 /**
@@ -89,6 +90,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			language = "en",
 			direction = "ltr",
 			kerning,
+			textRendering,
 		} = {},
 	)
 	{
@@ -162,6 +164,11 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		this._addAttribute(
 			"kerning",
 			kerning,
+			undefined,
+			onChange(true, true, true));
+		this._addAttribute(
+			"textRendering",
+			textRendering,
 			undefined,
 			onChange(true, true, true));
 		this._addAttribute(
@@ -651,10 +658,15 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 				pixiCanvas.setAttribute("lang", lang);
 				applyDirectionAcrossResizes(pixiCanvas, renderDir, lang);
 				applyKerningAcrossResizes(pixiCanvas, this._kerning);
+				applyTextRenderingAcrossResizes(pixiCanvas, this._textRendering);
 				// Also apply to PIXI's shared sizing canvas so text is measured
 				// with the same kerning it's rendered with (else kerning=none
 				// clips the right edge, e.g. "AV").
 				applyKerningAcrossResizes(PIXI.TextMetrics._canvas, this._kerning);
+				applyTextRenderingAcrossResizes(
+					PIXI.TextMetrics._canvas,
+					this._textRendering,
+				);
 				this._pixi.updateText(true);
 			}
 		}

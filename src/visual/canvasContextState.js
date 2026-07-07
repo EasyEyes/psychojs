@@ -65,6 +65,17 @@ export function applyKerningAcrossResizes(canvas, kerning) {
 }
 
 /**
+ * Apply textRendering to a text canvas, kept alive across resizes.
+ * `ctx.textRendering` is a standard CanvasRenderingContext2D property
+ * (auto/optimizeSpeed/optimizeLegibility/geometricPrecision). Partial browser
+ * support (Chrome largely ignores it on canvas) degrades silently via the
+ * try/catch in reapply(). Falsy → "auto".
+ */
+export function applyTextRenderingAcrossResizes(canvas, textRendering) {
+  persistCanvasContextState(canvas, { textRendering: textRendering || "auto" });
+}
+
+/**
  * Apply writing direction to a text canvas, kept alive across resizes.
  * textAlign forced to "left": PIXI draws left-anchored, so the default "start"
  * would flip to the right edge under rtl and push text off-canvas.
