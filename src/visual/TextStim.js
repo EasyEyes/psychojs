@@ -635,6 +635,13 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
       // to ltr). Mirrors the `lang` application below for uniformity.
       const renderDir = this._dirFromDirection();
 
+      // PIXI caches font metrics per font+size, measured with whatever the
+      // global METRICS_STRING happens to be set to at first use. Pin it to
+      // this stim's characterSet before constructing the PIXI.Text, so the
+      // texture bounds and baseline placement derive from this stim's own
+      // metrics string, not from whichever stim measured this font first.
+      PIXI.TextMetrics.METRICS_STRING = this._characterSet;
+
       if (this.getHeight() > this._psychoJS.fontRenderMaxPx) {
 		this._pixi = new PIXI.Text(applyPunctuationRTL(this._text), this._getTextStyle());
 		// changing pixi.text to pixi.bitmapText
