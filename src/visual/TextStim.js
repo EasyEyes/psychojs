@@ -261,7 +261,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			PIXI.TextMetrics.BASELINE_MULTIPLIER = 8;// 8 // 1.4
 			PIXI.TextMetrics.HEIGHT_MULTIPLIER = 12; // 12 // 2 
 			// PIXI.TextMetrics.BASELINE_SYMBOL = 'M';
-			PIXI.TextMetrics.METRICS_STRING = this._characterSet;
+			this._pinFontMetrics();
       		this._textMetrics = PIXI.TextMetrics.measureText(this.getText(), this._getTextStyle());
 			try {
 				this._textMetrics = PIXI.TextMetrics.measureText(this.getText(), this._getTextStyle(false));
@@ -518,6 +518,39 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	}
 
 	/**
+	 * Ensure PIXI's font-metrics cache entry for this stim's font+size was
+	 * measured with THIS stim's metrics string (characterSet).
+	 *
+	 * PIXI.TextMetrics.measureFont caches fontProperties keyed only by the CSS
+	 * font string (eg "300px IranNastaliq"), and the first measurement wins for
+	 * the whole session. Two stims sharing font+size but differing in metrics
+	 * string would silently share one entry — eg a stim measured with the
+	 * default "|ÉqÅ" poisoning an Arabic-script stim's baseline placement and
+	 * texture bounds (Latin glyphs have far shallower ascent/descent). On
+	 * mismatch, evict the stale entry so it is re-measured with this stim's
+	 * metrics string, and pin the global METRICS_STRING.
+	 *
+	 * @name module:visual.TextStim#_pinFontMetrics
+	 * @private
+	 */
+	_pinFontMetrics()
+	{
+		const fontString = this._getTextStyle().toFontString();
+		const measuredWith = TextStim._fontMetricsMeasuredWith.get(fontString);
+		if (
+			measuredWith !== undefined &&
+			measuredWith !== this._characterSet &&
+			PIXI.TextMetrics._fonts &&
+			PIXI.TextMetrics._fonts[fontString]
+		)
+		{
+			delete PIXI.TextMetrics._fonts[fontString];
+		}
+		TextStim._fontMetricsMeasuredWith.set(fontString, this._characterSet);
+		PIXI.TextMetrics.METRICS_STRING = this._characterSet;
+	}
+
+	/**
 	 * Setter for the color attribute.
 	 *
 	 * @name module:visual.TextStim#setColor
@@ -635,12 +668,11 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
       // to ltr). Mirrors the `lang` application below for uniformity.
       const renderDir = this._dirFromDirection();
 
-      // PIXI caches font metrics per font+size, measured with whatever the
-      // global METRICS_STRING happens to be set to at first use. Pin it to
-      // this stim's characterSet before constructing the PIXI.Text, so the
-      // texture bounds and baseline placement derive from this stim's own
-      // metrics string, not from whichever stim measured this font first.
-      PIXI.TextMetrics.METRICS_STRING = this._characterSet;
+      // Pin METRICS_STRING and evict any stale cache entry for this font+size
+      // (see _pinFontMetrics), so the texture bounds and baseline placement
+      // derive from this stim's own metrics string, not from whichever stim
+      // measured this font+size first.
+      this._pinFontMetrics();
 
       if (this.getHeight() > this._psychoJS.fontRenderMaxPx) {
 		this._pixi = new PIXI.Text(applyPunctuationRTL(this._text), this._getTextStyle());
@@ -786,6 +818,16 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
     return medialText;
 	}
 }
+
+/**
+ * <p>Records which metrics string (characterSet) was used to measure each
+ * font+size in PIXI's TextMetrics font cache. See _pinFontMetrics.</p>
+ *
+ * @name module:visual.TextStim#_fontMetricsMeasuredWith
+ * @readonly
+ * @private
+ */
+TextStim._fontMetricsMeasuredWith = new Map();
 
 /**
  * <p>This map associates units to default letter height.</p>
