@@ -274,39 +274,110 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			
 			// since PIXI.TextMetrics does not give us the actual bounding box of the text
 			// (e.g. the height is really just the ascent + descent of the font), we use measureText:
-			const textMetricsCanvas = document.createElement('canvas');
-			textMetricsCanvas.setAttribute("lang", this._language || "en");
-			// Mirror the language tag with a `dir`/`ctx.direction` for writing
-			// direction (rtl otherwise ltr). canvas has no vertical mode, so
-			// vertical-* degrade to ltr.
-			const metricsDir = this._dirFromDirection();
-			textMetricsCanvas.setAttribute("dir", metricsDir);
-			document.body.appendChild(textMetricsCanvas);
-
-			const ctx = textMetricsCanvas.getContext("2d");
-			if ("lang" in ctx) ctx.lang = this._language || "en";
-			ctx.direction = metricsDir;
-			ctx.font = this._getTextStyle().toFontString();
-			ctx.textBaseline = baseline;
-			ctx.textAlign = textAlign;
-			// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/letterSpacing
-			ctx.letterSpacing = `${this._letterSpacing}px`;
+			const ctx = this._getBoundingBoxCtx(baseline, textAlign);
+			const { fontString, frmpLimited } = this._getBoundingBoxFontString();
+			ctx.font = fontString;
 			this._textMetrics.boundingBox = ctx.measureText(this.getText());
-			try {
-				ctx.font = this._getTextStyle(false).toFontString();
-				this._textMetrics.boundingBox = ctx.measureText(this.getText());
-				// frmp = fontRenderMaxPx
-				this._textMetrics.frmpLimitedBoundingBox = false;
-			} catch (e) {
-				ctx.font = this._getTextStyle().toFontString();
-				this._textMetrics.boundingBox = ctx.measureText(this.getText());
-				this._textMetrics.frmpLimitedBoundingBox = true;
-			}
-
-			document.body.removeChild(textMetricsCanvas);
+			this._textMetrics.frmpLimitedBoundingBox = frmpLimited;
 		}
 
 		return this._textMetrics;
+	}
+
+	/**
+	 * The font string used for tight-bounding-box measurement: the
+	 * fontRenderMaxPx-unlimited style when available, else the default style.
+	 *
+	 * @name module:visual.TextStim#_getBoundingBoxFontString
+	 * @protected
+	 */
+	_getBoundingBoxFontString()
+	{
+		try {
+			return { fontString: this._getTextStyle(false).toFontString(), frmpLimited: false };
+		} catch (e) {
+			return { fontString: this._getTextStyle().toFontString(), frmpLimited: true };
+		}
+	}
+
+	/**
+	 * Configure and return the shared 2D context used for tight-bounding-box
+	 * measurement. SINGLE SOURCE OF TRUTH for measurement configuration —
+	 * getTextMetrics (via _textMetrics.boundingBox) and the cheap probe
+	 * measureText both measure through this exact context, so the
+	 * two can never drift apart. The canvas element is reused across calls
+	 * (previously a fresh canvas was created/appended/removed per call).
+	 *
+	 * @name module:visual.TextStim#_getBoundingBoxCtx
+	 * @protected
+	 */
+	_getBoundingBoxCtx(baseline = "alphabetic", textAlign = "left")
+	{
+		if (typeof TextStim._sharedMetricsCanvas === "undefined")
+		{
+			TextStim._sharedMetricsCanvas = document.createElement("canvas");
+		}
+		const canvas = TextStim._sharedMetricsCanvas;
+		canvas.setAttribute("lang", this._language || "en");
+		// Mirror the language tag with a `dir`/`ctx.direction` for writing
+		// direction (rtl otherwise ltr). canvas has no vertical mode, so
+		// vertical-* degrade to ltr.
+		const metricsDir = this._dirFromDirection();
+		canvas.setAttribute("dir", metricsDir);
+
+		const ctx = canvas.getContext("2d");
+		if ("lang" in ctx) ctx.lang = this._language || "en";
+		ctx.direction = metricsDir;
+		ctx.textBaseline = baseline;
+		ctx.textAlign = textAlign;
+		// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/letterSpacing
+		ctx.letterSpacing = `${this._letterSpacing}px`;
+		return ctx;
+	}
+
+	/**
+	 * General-purpose, render-free text measurement with this stim's font
+	 * settings (family, size, letterSpacing, language, direction).
+	 *
+	 * - tight (default): tight ink bounds via the shared _getBoundingBoxCtx
+	 *   canvas — cheap (~µs per call), safe in hot loops (reading pagination,
+	 *   per-glyph bounding). Shares its measurement context with
+	 *   getTextMetrics/getBoundingBox, so results are identical by
+	 *   construction; pinned by tests/e2e/textstim-measure-contract.e2e.test.ts.
+	 * - loose: PIXI.TextMetrics advance metrics (line layout).
+	 *
+	 * NOTE: getBoundingBox(true) currently re-derives the same tight box
+	 * through getTextMetrics PLUS a PIXI re-render (_updateIfNeeded). A future
+	 * migration may route it through this render-free path — see
+	 * notes/TODO-render-free-tight-bounding-box.md.
+	 *
+	 * @name module:visual.TextStim#measureText
+	 * @public
+	 * @param {string} text - the string to measure
+	 * @param {Object} [options]
+	 * @param {boolean} [options.tight=true] - tight ink bounds (fast) vs advance metrics
+	 * @returns {{width: number, height: number, textMetrics: Object}}
+	 */
+	measureText(text, { tight = true } = {})
+	{
+		if (tight)
+		{
+			const ctx = this._getBoundingBoxCtx();
+			const { fontString } = this._getBoundingBoxFontString();
+			ctx.font = fontString;
+			const m = ctx.measureText(text);
+			return {
+				width: m.actualBoundingBoxLeft + m.actualBoundingBoxRight,
+				height: m.actualBoundingBoxAscent + m.actualBoundingBoxDescent,
+				textMetrics: m,
+			};
+		}
+		// Pin + evict stale PIXI font-metrics cache entries for this font+size
+		// (see _pinFontMetrics, and the same guard in getTextMetrics and
+		// _updateIfNeeded).
+		this._pinFontMetrics();
+		const tm = PIXI.TextMetrics.measureText(text, this._getTextStyle());
+		return { width: tm.width, height: tm.height, textMetrics: tm };
 	}
 
 	/**
