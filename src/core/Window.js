@@ -132,6 +132,13 @@ export class Window extends PsychObject
 			document.body.removeChild(this._renderer.view);
 		}
 
+		// remove the DOM overlay layer used by HTMLTextStim, if any:
+		if (this._htmlTextLayer && document.body.contains(this._htmlTextLayer))
+		{
+			document.body.removeChild(this._htmlTextLayer);
+		}
+		this._htmlTextLayer = null;
+
 		// destroy the renderer and the WebGL context:
 		if (typeof this._renderer.gl !== "undefined")
 		{
