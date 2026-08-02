@@ -109,6 +109,7 @@ export class HTMLTextStim {
     // Canvas parity: preserve significant whitespace runs (phrase bullet
     // lines use 8-space indents) while still wrapping normally.
     s.whiteSpace = "break-spaces";
+    s.width = "max-content";
     s.fontFamily = font;
     s.textAlign = alignHoriz;
     this._el = el;
@@ -206,7 +207,9 @@ export class HTMLTextStim {
   }
 
   setWrapWidth(wrapWidth) {
-    this._el.style.maxWidth = `${this._getHorLengthPix(wrapWidth)}px`;
+    const px = this._getHorLengthPix(wrapWidth);
+    // TextStim convention: wrapWidth Infinity means "never wrap".
+    this._el.style.maxWidth = Number.isFinite(px) ? `${px}px` : "none";
   }
 
   setColor(color) {
