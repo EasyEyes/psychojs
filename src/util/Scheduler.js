@@ -85,6 +85,25 @@ export class Scheduler
 	}
 
 	/**
+	 * Schedule a task to run NEXT — ahead of everything currently queued.
+	 *
+	 * <p>This is the front-insertion counterpart of
+	 * [add()]{@link module:util/Scheduler#add}, which appends to the back.
+	 * Repeated calls stack like <code>Array.unshift</code> (the last task
+	 * unshifted becomes the frontmost).</p>
+	 *
+	 * @name module:util/Scheduler#unshift
+	 * @public
+	 * @param {module:util/Scheduler~Task | module:util/Scheduler} task - the task to be scheduled next
+	 * @param {...*} args - arguments for that task
+	 */
+	unshift(task, ...args)
+	{
+		this._taskList.unshift(task);
+		this._argsList.unshift(args);
+	}
+
+	/**
 	 * Condition evaluated when the task is run.
 	 *
 	 * @callback module:util.Scheduler~Condition
