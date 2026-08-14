@@ -10,6 +10,7 @@
 import * as PIXI from "pixi.js-legacy";
 import { applyPunctuationRTL } from "./punctuationRTL.js";
 import { Color } from "../util/Color.js";
+import * as ColorPipeline from "../util/ColorPipeline.js";
 import { ColorMixin } from "../util/ColorMixin.js";
 import { to_pixiPoint } from "../util/Pixi.js";
 import * as util from "../util/Util.js";
@@ -563,7 +564,13 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			fontSize: fontSize,
 			fontWeight: (this._bold) ? "bold" : "normal",
 			fontStyle: (this._italic) ? "italic" : "normal",
-			fill: this.getContrastedColor(new Color(this._color), this._contrast).hex,
+			// Float color pipeline: rasterize glyphs WHITE and carry the real
+			// color through a float-uniform filter (see _updateIfNeeded), so
+			// the color is not quantized to 8 bits by the hex fill. Legacy
+			// hex fill otherwise
+			fill: ColorPipeline.floatTextColorActive()
+				? "#ffffff"
+				: this.getContrastedColor(new Color(this._color), this._contrast).hex,
 			align: this._alignHoriz,
 			wordWrap: (typeof this._wrapWidth !== "undefined"),
 			wordWrapWidth: (typeof this._wrapWidth !== "undefined") ? this._getHorLengthPix(this._wrapWidth) : 0,
@@ -633,9 +640,24 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	{
 		const hasChanged = this._setAttribute("color", color, log);
 
-		if (hasChanged)
+		if (typeof this._pixi !== "undefined")
 		{
-			if (typeof this._pixi !== "undefined")
+			if (ColorPipeline.floatTextColorActive())
+			{
+				// Float color pipeline: the glyph texture stays white, so a
+				// color change is just a filter-uniform update — no style
+				// reassignment, no re-rasterization (fast path for
+				// contrast/color staircases).
+				// Deliberately NOT gated on hasChanged: that check compares
+				// Color.toString() values, which are quantized to 8-bit hex
+				// and would swallow the sub-LSB color steps this float path
+				// exists to deliver.
+				ColorPipeline.syncTextColorFilter(
+					this._pixi,
+					this.getContrastedColor(new Color(this._color), this._contrast),
+				);
+			}
+			else if (hasChanged)
 			{
 				this._pixi.style = this._getTextStyle();
 				this._needUpdate = true;
@@ -780,6 +802,14 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 				this._pixi.updateText(true);
 			}
 		}
+
+		// Float color pipeline: keep the filter's float color in sync with
+		// the (contrast-adjusted) stim color. Runs on every update so color
+		// and contrast changes are both covered; no-op when inactive.
+		ColorPipeline.syncTextColorFilter(
+			this._pixi,
+			this.getContrastedColor(new Color(this._color), this._contrast),
+		);
 
 		const anchor = this._getAnchor();
 		[this._pixi.anchor.x, this._pixi.anchor.y] = anchor;

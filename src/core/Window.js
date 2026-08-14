@@ -10,6 +10,7 @@
 import * as PIXI from "pixi.js-legacy";
 import { MonotonicClock } from "../util/Clock.js";
 import { Color } from "../util/Color.js";
+import * as ColorPipeline from "../util/ColorPipeline.js";
 import { PsychObject } from "../util/PsychObject.js";
 import { Logger } from "./Logger.js";
 import { targetEccentricityDeg, viewingDistanceCm } from "../../../components/global.js";
@@ -72,6 +73,8 @@ export class Window extends PsychObject
 		this._drawList = [];
 
 		this._addAttribute("fullscr", fullscr);
+		// color changes are applied by the explicit setColor method below
+		// (which _addAttribute wires to `window.color = ...` assignments):
 		this._addAttribute("color", color);
 		this._addAttribute("units", units);
 		this._addAttribute("waitBlanking", waitBlanking);
@@ -109,6 +112,33 @@ export class Window extends PsychObject
 		{
 			this._psychoJS.experimentLogger.exp(`Created ${this.name} = ${this.toString()}`);
 		}
+	}
+
+	/**
+	 * Setter for the color attribute (the window's background color).
+	 *
+	 * <p>Historically the color attribute had no change handler, so
+	 * `window.color = ...` updated _color but nothing repainted until the
+	 * next fullscreenchange or _fullRefresh — call sites had to set
+	 * `_needUpdate = true` by hand. This setter requests the repaint
+	 * itself. It deliberately does NOT gate on _setAttribute's hasChanged:
+	 * that check compares Color.toString() values, which are quantized to
+	 * 8-bit hex and would swallow the sub-LSB color steps that the
+	 * EasyEyes float16 color pipeline exists to deliver.</p>
+	 *
+	 * <p>_updateIfNeeded then pushes the clear color, the color pipeline's
+	 * float background, and the body CSS on the next render.</p>
+	 *
+	 * @name module:core.Window#setColor
+	 * @function
+	 * @public
+	 * @param {Color} color - the new background color
+	 * @param {boolean} [log= false] - whether or not to log
+	 */
+	setColor(color, log = false)
+	{
+		this._setAttribute("color", color, log);
+		this._needUpdate = true;
 	}
 
 	/**
@@ -320,6 +350,9 @@ export class Window extends PsychObject
 
 		this._frameCount++;
 
+		// fresh dither noise field for this frame (no-op when dither is off):
+		ColorPipeline.advanceDitherFrame();
+
 		// render the PIXI container:
 		this._renderer.render(this._rootContainer);
 
@@ -327,7 +360,8 @@ export class Window extends PsychObject
 		{
 			// this is to make sure that the GPU is done rendering, it may not be necessary
 			// [http://www.html5gamedevs.com/topic/27849-detect-when-view-has-been-rendered/]
-			this._renderer.gl.readPixels(0, 0, 1, 1, this._renderer.gl.RGBA, this._renderer.gl.UNSIGNED_BYTE, new Uint8Array(4));
+			// (format-aware: a float16 backbuffer requires a FLOAT readback)
+			ColorPipeline.syncGpuReadback(this._renderer.gl);
 
 			// blocks execution until the rendering is fully done:
 			if (this._waitBlanking)
@@ -364,11 +398,17 @@ export class Window extends PsychObject
 			if (this._renderer)
 			{
 				this._renderer.backgroundColor = this._color.int;
+				// Re-write the clear color as full-precision floats (the int
+				// setter quantizes to 8 bits) and update the float background
+				// quad, when the color pipeline is active.
+				ColorPipeline.syncBackgroundColor(this._renderer, this._color);
 			}
 
 			// we also change the background color of the body since
 			// the dialog popup may be longer than the window's height:
-			document.body.style.backgroundColor = this._color.hex;
+			// (in display-p3 mode the body must be tagged with the same
+			// color space as the canvas; legacy hex otherwise)
+			document.body.style.backgroundColor = ColorPipeline.cssBodyColor(this._color);
 
 			this._needUpdate = false;
 		}
@@ -474,6 +514,15 @@ export class Window extends PsychObject
 		this._rootContainer = new PIXI.Container();
 		this._rootContainer.interactive = true;
 
+		// EasyEyes color pipeline: tag the drawing buffer's color space
+		// (sRGB / Display-P3), request a float16 backbuffer, and set up the
+		// float background + dither passes. Inert unless configured before
+		// window creation (see util/ColorPipeline.js).
+		ColorPipeline.applyColorPipelineToRenderer(this._renderer, this._rootContainer);
+		// In display-p3 mode the body color (set above from hex) must be
+		// re-tagged with the canvas's color space so both match exactly:
+		document.body.style.backgroundColor = ColorPipeline.cssBodyColor(this._color);
+
 		// set the initial size of the PIXI renderer and the position of the root container:
 		Window._resizePixiRenderer(this);
 
@@ -528,6 +577,11 @@ export class Window extends PsychObject
 		pjsWindow._renderer.view.style.left = "0px";
 		pjsWindow._renderer.view.style.top = "0px";
 		pjsWindow._renderer.resize(pjsWindow._size[0], pjsWindow._size[1]);
+
+		// resizing the canvas may reset the drawing buffer format; re-apply
+		// the float16 storage and resize the background quad (no-op when the
+		// color pipeline is off):
+		ColorPipeline.resizeColorPipeline(pjsWindow._renderer);
 
 		// Setup the container such that (0,0) is at the centre of the window with positive
 		// coordinates to the right and top:
