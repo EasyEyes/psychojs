@@ -12,6 +12,7 @@ import { MonotonicClock } from "../util/Clock.js";
 import { PsychObject } from "../util/PsychObject.js";
 import * as util from "../util/Util.js";
 import { calibrationTime } from "../../../components/global.js";
+import { excelSafeRows } from "./excelSafe.js";
 
 /**
  * <p>An ExperimentHandler keeps track of multiple loops and handlers. It is particularly useful
@@ -329,6 +330,12 @@ export class ExperimentHandler extends PsychObject
 			this._trialsData = [];
 		}
 
+		// Excel-safe cells are a property of the emitted artifact, not of the
+		// data: format once, here, so every consumer below (CSV file, Pavlovia
+		// database upload, results.json download) gets spaced commas while the
+		// in-memory trial data stays raw. excelSafeRows never throws.
+		data = excelSafeRows(data);
+
 		// save to a .csv file:
 		if (this._psychoJS.config.experiment.saveFormat === ExperimentHandler.SaveFormat.CSV)
 		{
@@ -427,7 +434,7 @@ export class ExperimentHandler extends PsychObject
 		// note: we use the XLSX library as it automatically deals with header, takes care of quotes,
 		// newlines, etc.
 		console.log(data);
-		const worksheet = XLSX.utils.json_to_sheet(data);
+		const worksheet = XLSX.utils.json_to_sheet(excelSafeRows(data));
 		// prepend BOM
 		const csv = "\ufeff" + XLSX.utils.sheet_to_csv(worksheet);
 
@@ -466,7 +473,7 @@ export class ExperimentHandler extends PsychObject
 			
 				if (online){
 					try {
-						this._psychoJS.serverManager.uploadData('results', JSON.stringify(data), false);
+						this._psychoJS.serverManager.uploadData('results', JSON.stringify(excelSafeRows(data)), false);
 					} catch (e) {
 						console.error("Error saving to results.", e);
 					}
