@@ -15,9 +15,10 @@ import { Scheduler } from "../util/Scheduler.js";
 import * as util from "../util/Util.js";
 import { PsychoJS } from "./PsychoJS.js";
 import { ServerManager } from "./ServerManager.js";
-import { status, thisExperimentInfo, websiteRepoLastCommitDeploy } from "../../../components/global.js";
 import { paramReader } from "../../../threshold.js";
 import { psychoJS } from "../../../components/globalPsychoJS.js";
+import { buildErrorContext } from "../../../components/errorContext.js";
+import { buildRuntimeErrorMessage, formatErrorContextAsText } from "../../../components/runtimeErrorMessage.js";
 
 /**
  * @class
@@ -337,7 +338,7 @@ export class GUI
 		error,
 		showOK = true,
 		onOK,
-		okText = "OK",
+		okText,
 		addErrorToPsychoJS = true,
 	} = {})
 	{
@@ -346,6 +347,11 @@ export class GUI
 
 		let htmlCode;
 		let titleColour;
+		// Title bar direction — the participant's language is RTL in some
+		// studies, and each part of the dialog states its own direction.
+		let titleDirection = "ltr";
+		let titleLanguage = "en";
+		let localizedOkText;
 
 		// we are displaying an error:
 		if (typeof error !== "undefined")
@@ -358,16 +364,10 @@ export class GUI
 			// 	extraMessageFromEasyEyes = window.errorHandler(error);
 			// }
 
-			// deal with null error:
-			if (!error)
-			{
-				error = "Unspecified JavaScript error";
-			}
-
 			let errorCode = null;
 
 			// go through the error stack and look for errorCode if there is one:
-			let stackCode = "<ul>";
+			const contextChain = [];
 			while (true)
 			{
 				if (typeof error === "object" && "errorCode" in error)
@@ -377,7 +377,7 @@ export class GUI
 
 				if (typeof error === "object" && "context" in error)
 				{
-					stackCode += "<li>" + error.context + "</li>";
+					contextChain.push(error.context);
 					error = error.error;
 				}
 				else
@@ -387,67 +387,9 @@ export class GUI
 					{
 						error = error.substring(1, 1000);
 					}
-					try{
-						const BC = status.block_condition
-						let block = status.block
-						let condition = ""
-						let trial = status.trial ?? 0
-						let conditionName = ""
-						if(BC){
-							condition = status.block_condition.split("_")[1]
-							conditionName = paramReader.read("conditionName", BC)
-						}
-						const text = `<span style="display:block; margin-top:10px;">
-							block: ${block}, 
-							condition: ${condition}, 
-							trial: ${trial}<br>
-							conditionName: ${conditionName}<br>
-							experiment: ${thisExperimentInfo.experiment}<br>
-							current time: ${new Date().toLocaleString(
-								undefined,
-								{
-								  dateStyle: "medium",
-								},
-							  ) + " " + new Date().toLocaleString(undefined, { timeStyle: "short" }) + " " + util.getTimezoneName()
-							}<br>
-						</span>`;
-						 
-						error += text
-					} catch (e) {
-						console.error("Error when trying to add block, condition information to error message: " + e)
-					}
-
-					try{
-						const commit = websiteRepoLastCommitDeploy.current
-						if(commit !== undefined){
-							const time = new Date(commit).toLocaleDateString(
-								undefined,
-								{
-								  dateStyle: "medium",
-								},
-							  )+ " " +
-							  new Date(commit).toLocaleString(
-								undefined,
-								{
-								  timeStyle: "short",
-								},
-							  ) + " " +
-							  util.getTimezoneName()
-							  error += `<span style="display:block; margin-top:0px;">Compiler updated ${time}</span>`
-						}
-						
-					}catch(e){
-						console.error("Error when trying to add compiler updated date information to error message: " + e)
-					}
-					if(addErrorToPsychoJS){
-						psychoJS.experiment.addData("error", error);
-					}
-					
-					stackCode += "<li>" + error + "</li>";
 					break;
 				}
 			}
-			stackCode += "</ul>";
 
 			// if we found an errorCode, we replace the stack-based message by a more user-friendly one:
 			if (errorCode)
@@ -458,19 +400,35 @@ export class GUI
 			}
 			else
 			{
-				htmlCode = '<div id="msgDialog" title="Error">';
-				htmlCode += '<p class="validateTips">The study ended with this error:</p>';
-				htmlCode += stackCode;
-				// htmlCode += `<p class="psychojs-alert-text">Click the REPORT button to report the error to the EasyEyes team. We will try to fix it. Thank you for your help.</p>`;
-				htmlCode += "</div>";
+				const context = buildErrorContext(paramReader);
+
+				if (addErrorToPsychoJS)
+				{
+					try
+					{
+						psychoJS.experiment.addData("error", error + formatErrorContextAsText(context));
+					}
+					catch (e)
+					{
+						console.error("Error when trying to record the error in the data: " + e);
+					}
+				}
+
+				const runtimeError = buildRuntimeErrorMessage({
+					errorDescription: error,
+					contextChain,
+					context,
+				});
+				titleDirection = runtimeError.titleDirection;
+				titleLanguage = runtimeError.titleLanguage;
+				localizedOkText = runtimeError.okText;
+
+				htmlCode = `<div id="msgDialog" title="${runtimeError.title.replace(/"/g, "&quot;")}">`
+					+ runtimeError.html
+					+ "</div>";
 
 				titleColour = "red";
 			}
-
-			// if (extraMessageFromEasyEyes.length)
-			// {
-			// 	htmlCode += `<p>${extraMessageFromEasyEyes}</p>`;
-			// }
 		}
 		// we are displaying a message:
 		else if (typeof message !== "undefined")
@@ -509,7 +467,7 @@ export class GUI
 
 			buttons: (!showOK) ? [] : [{
 				id: "buttonOk",
-				text: okText,
+				text: okText ?? localizedOkText ?? "OK",
 				click: function()
 				{
 					jQuery(this).dialog("destroy").remove();
@@ -524,6 +482,14 @@ export class GUI
 		})
 			// change colour of title bar
 			.prev(".ui-dialog-titlebar").css("background", titleColour);
+			// The title bar text follows the participant's language; the close
+			// button keeps its own position, so only the title span is flipped.
+			const dialogTitleElement = document.getElementsByClassName("ui-dialog-title")[0];
+			if (dialogTitleElement)
+			{
+				dialogTitleElement.setAttribute("dir", titleDirection);
+				dialogTitleElement.setAttribute("lang", titleLanguage);
+			}
 			const dialogCloseButton = document.getElementsByClassName("ui-dialog-titlebar-close")[0];
 			if (dialogCloseButton){
 				dialogCloseButton.innerHTML = "X";
