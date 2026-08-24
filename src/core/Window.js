@@ -170,10 +170,11 @@ export class Window extends PsychObject
 		this._htmlTextLayer = null;
 
 		// destroy the renderer and the WebGL context:
-		if (typeof this._renderer.gl !== "undefined")
+		if (this._renderer.gl)
 		{
+			// extension is null if the context is already lost
 			const extension = this._renderer.gl.getExtension("WEBGL_lose_context");
-			extension.loseContext();
+			extension?.loseContext();
 		}
 
 		this._renderer.destroy();

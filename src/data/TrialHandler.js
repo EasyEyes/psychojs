@@ -158,14 +158,17 @@ export class TrialHandler extends PsychObject
 						this.thisTrialN = 0;
 						this.thisRepN++;
 					}
+				}
 
-					// check if we have completed the sequence:
-					if (this.thisRepN >= this.nReps)
-					{
-						this.thisTrial = null;
-						return { done: true };
-					}
-
+				// check if we have completed the sequence, whether or not this
+				// trial counts: a non-counting next() can arrive after the sequence
+				// was exhausted (e.g. retries kept nRemaining above zero), and must
+				// not index past the end of _trialSequence.
+				if (this.thisRepN >= this.nReps)
+				{
+					this.thisTrial = null;
+					this._finished = true;
+					return { done: true };
 				}
 
 				this.thisIndex = this._trialSequence[this.thisRepN][this.thisTrialN];
