@@ -168,15 +168,17 @@ export class QuestHandler extends TrialHandler
 		}
 		
 
-		if (!this._finished)
+		if (!this._finished && !doResetQuest)
 		{
 			this.next(doGiveToQuest);
 
 			// estimate the next value of the QUEST variable
 			// (and update the trial list and snapshots):
-			if (!doResetQuest) this._estimateQuestValue(); // doResetQuest sets a value for this._questValue already
-			
+			this._estimateQuestValue();
 		}
+		// doResetQuest (practice flush): the iterator was just homed and the
+		// pdf rebuilt from the prior — the flush response is practice, not an
+		// on-record trial, so it consumes no trial budget.
 	}
 
 	/**
@@ -301,6 +303,16 @@ export class QuestHandler extends TrialHandler
 	  const currentEstimate = this.getQuestValue(); 
 	  this._setupJsQuest(); // Reset internal state
 	  this._questValue = currentEstimate;  
+	  // The flush restores the original requested number of trials
+	  // (glossary: thresholdPracticeUntilCorrectBool): rewind the iterator
+	  // to its pre-first-trial state and refill the budget consumed by
+	  // practice trials, else the staircase finishes early after a long
+	  // practice phase.
+	  this.thisTrialN = -1;
+	  this.thisRepN = 0;
+	  this.thisN = 0;
+	  this.nRemaining = this.nTotal;
+	  this._finished = false;
 	}
 
 	/**

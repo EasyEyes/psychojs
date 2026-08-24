@@ -137,6 +137,9 @@ export class MultiStairHandler extends TrialHandler
 			if (isConditionFinished) {
 				// Remove any remaining trials for this condition from the trialKey
 				this.trialKey = this.trialKey.filter(key => key !== this._currentStaircase._name);
+				// and mark the staircase finished, so it is never served again
+				// (otherwise pass rebuilds would re-serve it past its target).
+				this._currentStaircase._finished = true;
 			}
 
 			// move onto the next trial:
@@ -311,9 +314,30 @@ export class MultiStairHandler extends TrialHandler
 						// this._currentPass = [handler];
 
 						this.trialKey = util.shuffle(this.trialKey);
-						const nextConditionName = this.trialKey.shift();
-						const handler = this._staircases.filter(staircase => staircase._name === nextConditionName)[0];
-						this._currentPass = [handler];
+						// Queued retries for finished staircases are void: a finished
+						// staircase must never be served again (its responses would be
+						// silently ignored, showing the participant spurious trials).
+						let handler;
+						while (this.trialKey.length > 0 && !handler)
+						{
+							const nextConditionName = this.trialKey.shift();
+							const candidate = this._staircases.filter(staircase => staircase._name === nextConditionName)[0];
+							if (!candidate || !candidate.finished)
+							{
+								handler = candidate;
+							}
+						}
+						if (handler)
+						{
+							this._currentPass = [handler];
+						}
+						else
+						{
+							// Queue drained (all voided or consumed): no scheduled trials
+							// remain, so the loop terminates even if a staircase never
+							// reached its target — the queue IS the total-trials bound.
+							this._currentPass = [];
+						}
 					}
 				}
 			}
