@@ -22,11 +22,13 @@ import { expect, describe, test } from "@jest/globals";
 import { QuestHandler } from "./QuestHandler.js";
 
 // jsQUEST is a global in the app; minimal stub — bookkeeping under test.
+// val differs between the prior (QuestCreate: 99) and a post-response pdf
+// (QuestUpdate: 42) so _questValue-preservation assertions are non-vacuous.
 globalThis.jsQUEST = {
-  QuestCreate: () => ({}),
-  QuestUpdate: (q) => q,
+  QuestCreate: () => ({ val: 99 }),
+  QuestUpdate: () => ({ val: 42 }),
   QuestSimulate: () => 1,
-  QuestQuantile: (q, p) => (typeof p === "number" ? p : 0),
+  QuestQuantile: (q, p) => (typeof p === "number" ? p : q.val),
   QuestMean: () => 0,
   QuestMode: () => 0,
   QuestSd: () => 100,
@@ -91,5 +93,23 @@ describe("practice flush restores the original requested number of trials", () =
     expect(handler.thisN).toBe(0);
     expect(handler.nRemaining).toBe(handler.nTotal);
     expect(handler.finished).toBe(false);
+  });
+});
+
+describe("spec point 2: the flush preserves the level that succeeded", () => {
+  // Glossary (thresholdPracticeUntilCorrectBool): "BUT START AT THE LEVEL
+  // THAT SUCCEEDED. ... for the first trial on the record, Quest will
+  // provide the same levelSuggestedByQuest as it provided in the successful
+  // practice trial." The first on-record serve reads getQuestValue()
+  // immediately after the flush (MultiStairHandler._nextTrial), so reset()
+  // must carry _questValue across the pdf rebuild.
+  test("getQuestValue() is unchanged by the flush", () => {
+    const handler = makeHandler(3);
+    // a couple of practice-wrong trials, then the flush
+    handler.addResponse(0, -1, false, true);
+    handler.addResponse(0, -1, false, true);
+    const levelThatSucceeded = handler.getQuestValue();
+    handler.addResponse(1, -1, false, true, true); // first correct → flush
+    expect(handler.getQuestValue()).toBe(levelThatSucceeded);
   });
 });
