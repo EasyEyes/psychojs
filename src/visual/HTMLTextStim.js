@@ -83,6 +83,7 @@ export class HTMLTextStim {
   } = {}) {
     this._win = win;
     this.name = name;
+    this._name = name;
     this._textRenderer = textRenderer;
     this._units = units;
     this._pos = pos;
