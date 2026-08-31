@@ -279,7 +279,9 @@ export const applyColorPipelineToRenderer = (renderer, rootContainer) => {
 						gl.drawingBufferFormat === gl.RGBA16F);
 				if (!state.drawingBufferFloat)
 					state.failures.push(
-						`drawingBufferStorage(RGBA16F) rejected (glError 0x${glError.toString(16)})`,
+						`drawingBufferStorage(RGBA16F) rejected (glError 0x${glError.toString(
+							16,
+						)})`,
 					);
 			} catch (e) {
 				state.failures.push(`drawingBufferStorage failed: ${e.message}`);
@@ -289,13 +291,12 @@ export const applyColorPipelineToRenderer = (renderer, rootContainer) => {
 		}
 	}
 
-	
-
 	// Float color path for text/background: worthwhile whenever the value
 	// can survive past 8 bits — into a float backbuffer, or into the float
 	// intermediate that the dither pass quantizes smartly.
 	state.floatColorActive =
-		state.drawingBufferFloat || (config.ditherBool && state.floatFilterTextures);
+		state.drawingBufferFloat ||
+		(config.ditherBool && state.floatFilterTextures);
 
 	// (2c) Full-screen background quad carrying the float background color.
 	// PIXI's clear color is 8-bit quantized (backgroundColor int); a WHITE
@@ -342,7 +343,11 @@ export const applyColorPipelineToRenderer = (renderer, rootContainer) => {
 export const resizeColorPipeline = (renderer) => {
 	if (!state.applied || state.renderer !== renderer) return;
 	const gl = renderer.gl;
-	if (state.drawingBufferFloat && gl && typeof gl.drawingBufferStorage === "function") {
+	if (
+		state.drawingBufferFloat &&
+		gl &&
+		typeof gl.drawingBufferStorage === "function"
+	) {
 		try {
 			gl.drawingBufferStorage(gl.RGBA16F, gl.canvas.width, gl.canvas.height);
 		} catch (e) {
@@ -366,7 +371,8 @@ export const advanceDitherFrame = () => {
 	if (!state.ditherActive) return;
 	state.frame = (state.frame + 1) % 100000;
 	// Irrational stride decorrelates consecutive frames' noise fields.
-	state.ditherFilter.uniforms.uSeed = 1.0 + (state.frame * 0.618034) % 61.8034;
+	state.ditherFilter.uniforms.uSeed =
+		1.0 + ((state.frame * 0.618034) % 61.8034);
 };
 
 // ------------------------------- colors --------------------------------
@@ -552,6 +558,18 @@ export const getColorPipelineReport = () => {
 		displayP3Gamut: mq("(color-gamut: p3)"),
 		rec2020Gamut: mq("(color-gamut: rec2020)"),
 		dynamicRangeHigh: mq("(dynamic-range: high)"),
+		// Panel-depth HINTS — browser reports, not hardware certification.
+		// screen.colorDepth may return 24 regardless of the panel (CSSOM
+		// allows it; some Chromium/HDR configs report 30). (min-color: 10)
+		// asks for >=10 bits per color component of the output device, but
+		// cannot distinguish native 10-bit from 8-bit+FRC, nor guarantee the
+		// full path runs at that depth. Effective luminance precision must
+		// be MEASURED (photometer sweep or the visual precision test in
+		// tests/e2e/COLOR_PIPELINE_PHOTOMETER_PROTOCOL.md, Test 7); these
+		// hints only contextualize that measurement.
+		screenColorDepth:
+			typeof screen !== "undefined" ? screen.colorDepth : undefined,
+		minColor10Bits: mq("(min-color: 10)"),
 		devicePixelRatio:
 			typeof window !== "undefined" ? window.devicePixelRatio : undefined,
 	};
