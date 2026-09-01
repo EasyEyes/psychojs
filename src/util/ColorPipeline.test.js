@@ -16,6 +16,9 @@ import {
 	getColorPipelineReport,
 	readDrawingBufferPixel,
 	readDrawingBufferRect,
+	resumeDither,
+	setDitherLsb,
+	suspendDither,
 } from "./ColorPipeline.js";
 
 // Minimal fakes. getExtension returns null so the float render-texture path
@@ -230,6 +233,55 @@ describe("applyColorPipelineToRenderer", () => {
 		expect(
 			report.failures.some((f) => f.includes("float16 render textures")),
 		).toBe(true);
+	});
+});
+
+// Runtime dither control, used by the visual display-precision test
+// (threshold components/displayPrecisionTest.js): the test suspends the
+// dither pass while it measures the display's own quantization, then sets
+// the dither LSB to the measured effective precision and resumes. The
+// ACTIVE paths (a real dither filter attached to a root container) need
+// PIXI objects that require a DOM, so they are exercised by
+// tests/e2e/displayPrecisionTest.e2e.test.ts; here we pin the config
+// plumbing and the guarantees that matter when dither never activated.
+describe("dither runtime control", () => {
+	beforeEach(resetConfig);
+
+	test("setDitherLsb updates the sticky config and the report", () => {
+		expect(setDitherLsb(1 / 1023)).toBe(true);
+		expect(getColorPipelineConfig().ditherLsb).toBeCloseTo(1 / 1023, 12);
+		expect(getColorPipelineReport().ditherLsb).toBeCloseTo(1 / 1023, 12);
+	});
+
+	test("setDitherLsb rejects out-of-range and non-numeric values", () => {
+		const before = getColorPipelineConfig().ditherLsb;
+		expect(setDitherLsb(0)).toBe(false);
+		expect(setDitherLsb(1)).toBe(false);
+		expect(setDitherLsb(-0.1)).toBe(false);
+		expect(setDitherLsb("1/255")).toBe(false);
+		expect(setDitherLsb(NaN)).toBe(false);
+		expect(getColorPipelineConfig().ditherLsb).toBe(before);
+	});
+
+	test("suspendDither reports false when dither never activated", () => {
+		configureColorPipeline({ ditherBool: true });
+		// getExtension → null: no float render textures, dither declined.
+		applyColorPipelineToRenderer(
+			makeFakeRenderer(makeFakeGl()),
+			makeFakeRootContainer(),
+		);
+		expect(getColorPipelineReport().dither).toBe(false);
+		expect(suspendDither()).toBe(false);
+	});
+
+	test("resumeDither cannot switch dither on where apply declined it", () => {
+		configureColorPipeline({ ditherBool: true });
+		const root = makeFakeRootContainer();
+		applyColorPipelineToRenderer(makeFakeRenderer(makeFakeGl()), root);
+
+		expect(resumeDither()).toBe(false);
+		expect(getColorPipelineReport().dither).toBe(false);
+		expect(root.filters).toBeNull();
 	});
 });
 

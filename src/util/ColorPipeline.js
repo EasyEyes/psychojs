@@ -57,10 +57,14 @@ const DEFAULT_CONFIG = Object.freeze({
 	float16Bool: false,
 	// Noisy-bit spatiotemporal dithering of the final image.
 	ditherBool: false,
-	// LSB of the assumed output pipe, in [0,1] units. 1/255 targets 8-bit
-	// panels; use 1/1023 on a known 10-bit end-to-end pipe.
+	// LSB of the output pipe, in [0,1] units: the dither amplitude must equal
+	// the pipe's own quantization step (1/255 on an 8-bit-effective pipe,
+	// 1/1023 on a 10-bit-effective one). 1/255 is the safe compiled default;
+	// when _screenMeasurePrecision requests it (test1Digit/test2Digits), the
+	// visual display-precision test (threshold
+	// components/displayPrecisionTest.js) measures the session's effective
+	// precision at startup and overwrites this via setDitherLsb().
 	ditherLsb: 1 / 255,
-	// ditherLsb: 1 / 1023,
 });
 
 const config = { ...DEFAULT_CONFIG };
@@ -70,6 +74,7 @@ const config = { ...DEFAULT_CONFIG };
 const state = {
 	applied: false,
 	renderer: null,
+	rootContainer: null,
 	colorSpaceApplied: "srgb",
 	drawingBufferFloat: false,
 	floatFilterTextures: false,
@@ -201,6 +206,7 @@ export const applyColorPipelineToRenderer = (renderer, rootContainer) => {
 	// Fresh state for (re)created renderers.
 	state.applied = false;
 	state.renderer = renderer;
+	state.rootContainer = rootContainer;
 	state.colorSpaceApplied = "srgb";
 	state.drawingBufferFloat = false;
 	state.floatFilterTextures = false;
@@ -373,6 +379,54 @@ export const advanceDitherFrame = () => {
 	// Irrational stride decorrelates consecutive frames' noise fields.
 	state.ditherFilter.uniforms.uSeed =
 		1.0 + ((state.frame * 0.618034) % 61.8034);
+};
+
+/**
+ * Temporarily remove the dither pass while leaving the rest of the pipeline
+ * (float16 buffers, float color path) untouched. Used by the visual
+ * display-precision test, which must measure the DISPLAY's own quantization:
+ * our dither would synthesize sub-LSB steps regardless of the panel.
+ *
+ * @returns {boolean} true when dither was active and is now suspended —
+ *   the caller is responsible for calling resumeDither() afterwards.
+ */
+export const suspendDither = () => {
+	if (!state.ditherActive || !state.rootContainer) return false;
+	state.rootContainer.filters = null;
+	state.ditherActive = false;
+	return true;
+};
+
+/**
+ * Re-install the dither pass after suspendDither(). No-op unless the
+ * pipeline had actually activated dither (so it can never switch dither on
+ * where applyColorPipelineToRenderer declined it).
+ */
+export const resumeDither = () => {
+	if (!state.ditherFilter || !state.rootContainer) return false;
+	if (
+		!state.rootContainer.filters ||
+		state.rootContainer.filters.indexOf(state.ditherFilter) === -1
+	)
+		state.rootContainer.filters = [state.ditherFilter];
+	state.ditherActive = true;
+	return true;
+};
+
+/**
+ * Set the dither amplitude (the output pipe's quantization step, in [0,1]
+ * units) at runtime — e.g. to the effective display precision measured by
+ * the visual display-precision test. Updates both the sticky config (so
+ * renderer re-creations keep the value) and the live filter uniform.
+ *
+ * @param {number} lsb - e.g. 1/255 (8-bit pipe), 1/1023 (10-bit pipe)
+ * @returns {boolean} true when the value was accepted
+ */
+export const setDitherLsb = (lsb) => {
+	if (typeof lsb !== "number" || !(lsb > 0 && lsb < 1)) return false;
+	config.ditherLsb = lsb;
+	if (state.ditherFilter) state.ditherFilter.uniforms.uLsb = lsb;
+	return true;
 };
 
 // ------------------------------- colors --------------------------------
@@ -564,8 +618,10 @@ export const getColorPipelineReport = () => {
 		// asks for >=10 bits per color component of the output device, but
 		// cannot distinguish native 10-bit from 8-bit+FRC, nor guarantee the
 		// full path runs at that depth. Effective luminance precision must
-		// be MEASURED (photometer sweep or the visual precision test in
-		// tests/e2e/COLOR_PIPELINE_PHOTOMETER_PROTOCOL.md, Test 7); these
+		// be MEASURED (the visual display-precision test in threshold
+		// components/displayPrecisionTest.js, run when
+		// _screenMeasurePrecision requests it, or a photometer sweep per
+		// tests/e2e/COLOR_PIPELINE_PHOTOMETER_PROTOCOL.md Test 7); these
 		// hints only contextualize that measurement.
 		screenColorDepth:
 			typeof screen !== "undefined" ? screen.colorDepth : undefined,
