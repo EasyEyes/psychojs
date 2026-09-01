@@ -264,7 +264,7 @@ export class MultiStairHandler extends TrialHandler
 
 				this._staircases.push(handler);
 			}
-			this.trialKey = util.shuffle(this.trialKey);
+			this.trialKey = util.shuffle(this.trialKey, this._randomNumberGenerator);
 
 			this._currentPass = [];
 			this._currentStaircase = null;
@@ -313,7 +313,7 @@ export class MultiStairHandler extends TrialHandler
 						// const handler = this._currentPass[index];
 						// this._currentPass = [handler];
 
-						this.trialKey = util.shuffle(this.trialKey);
+						this.trialKey = util.shuffle(this.trialKey, this._randomNumberGenerator);
 						// Queued retries for finished staircases are void: a finished
 						// staircase must never be served again (its responses would be
 						// silently ignored, showing the participant spurious trials).
