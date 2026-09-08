@@ -149,20 +149,30 @@ export class QuestHandler extends TrialHandler
 			this.reset();
 		} else if (doGiveToQuest) {
 			// update the QUEST pdf:
-			if (typeof value !== "undefined")
+			const questValue = (typeof value !== "undefined") ? value : this._questValue;
+			// A non-finite value would poison the QUEST pdf and crash the
+			// same-call quantile estimate ("Query value NaN"), killing the
+			// study. Never feed it: skip the pdf update (the response is still
+			// recorded above) and say so loudly.
+			if (!Number.isFinite(questValue))
 			{
-				if (response instanceof Array){
-					response.forEach( r => this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, value, r));
-				} else {
-					this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, value, response);
+				const err = {
+					origin: "QuestHandler.addResponse",
+					context: "when updating the QUEST pdf",
+					error: `non-finite value ${String(questValue)} not passed to QUEST; pdf left unchanged`
+				};
+				console.error(err);
+				if (this._psychoJS.logger && this._psychoJS.logger.error)
+				{
+					this._psychoJS.logger.error(err);
 				}
 			}
 			else
 			{
 				if (response instanceof Array){
-					response.forEach( r => this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, this._questValue, r));
+					response.forEach( r => this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, questValue, r));
 				} else {
-					this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, this._questValue, response);
+					this._jsQuest = jsQUEST.QuestUpdate(this._jsQuest, questValue, response);
 				}
 			}
 		}

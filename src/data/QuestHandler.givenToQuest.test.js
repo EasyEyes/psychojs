@@ -136,3 +136,48 @@ describe("MultiStairHandler plumbing carries the give-decision to QUEST", () => 
     expect(updates).toEqual([]);
   });
 });
+
+// ── NaN chokepoint (field crash: QuestUpdate with NaN poisons the pdf and
+// the SAME-CALL quantile estimate throws "Query value NaN", killing the
+// study). A non-finite value must NEVER reach QuestUpdate — the posterior
+// stays intact and the study continues.
+describe("QuestHandler rejects non-finite values at the chokepoint", () => {
+  beforeEach(installSpy);
+
+  test("NaN value never reaches QuestUpdate (posterior untouched)", () => {
+    const q = makeQuest();
+    q.addResponse(1, NaN, false, true);
+    expect(updates).toHaveLength(0);
+    // Posterior untouched ⇒ estimating the next value still works.
+    expect(() => q.getQuestValue()).not.toThrow();
+  });
+
+  test("Infinity value never reaches QuestUpdate either", () => {
+    const q = makeQuest();
+    q.addResponse(0, Infinity, false, true);
+    expect(updates).toHaveLength(0);
+  });
+
+  test("finite values keep flowing after a rejected one", () => {
+    const q = makeQuest();
+    q.addResponse(1, NaN, false, true);
+    q.addResponse(1, -0.5, false, true);
+    expect(updates).toEqual([[-0.5, 1]]);
+  });
+
+  test("response is still recorded in the data row (only the pdf update is skipped)", () => {
+    const data = [];
+    const psychoJS = { ...mockPsychoJS, experiment: { addData: (k, v) => data.push([k, v]) } };
+    const q = new QuestHandler({
+      psychoJS,
+      varName: "trialsVal",
+      startVal: -1,
+      startValSd: 1,
+      pThreshold: 0.82,
+      nTrials: 4,
+      name: "s",
+    });
+    q.addResponse(1, NaN, true, true);
+    expect(data).toContainEqual(["s.response", 1]);
+  });
+});
