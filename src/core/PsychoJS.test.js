@@ -69,3 +69,92 @@ describe("PsychoJS.quit() skipSave option", () => {
     expect(instance._gui.displayMessage).toHaveBeenCalled();
   });
 });
+
+describe("PsychoJS.quit() doNotCloseMessage suppression", () => {
+  // threshold renders its own saving indicator over the page; a second wait
+  // message underneath would double-render.
+  test("doNotCloseMessage:'' skips the wait message but still shows the finished screen", async () => {
+    const { instance } = makeQuitStub();
+
+    await instance.quit({ isCompleted: true, doNotCloseMessage: "" });
+
+    // exactly one displayMessage: the finished screen — no wait message
+    expect(instance._gui.displayMessage).toHaveBeenCalledTimes(1);
+  });
+
+  test("default doNotCloseMessage shows the wait message, then the finished screen", async () => {
+    const { instance } = makeQuitStub();
+
+    await instance.quit({ isCompleted: true });
+
+    expect(instance._gui.displayMessage).toHaveBeenCalledTimes(2);
+    expect(instance._gui.displayMessage.mock.calls[0][0]).toEqual(
+      expect.objectContaining({
+        warning: expect.stringContaining("DO NOT CLOSE"),
+      }),
+    );
+  });
+});
+
+// ── adversarial findings from the save-orchestration collapse ───────────────
+import { ExperimentHandler } from "../data/ExperimentHandler.js";
+
+describe("PsychoJS.quit() — teardown must wait for the save", () => {
+  test("experimentEnded is set only AFTER the save resolves (a stalled save must not mark the experiment ended)", async () => {
+    const { instance } = makeQuitStub();
+    let resolveSave = () => {};
+    instance._experiment.save.mockImplementation(
+      () =>
+        new Promise((res) => {
+          resolveSave = res;
+        }),
+    );
+
+    const q = instance.quit({ isCompleted: true });
+    await new Promise((r) => setTimeout(r, 0));
+    // While the save is stalled, the experiment is NOT ended: a second quit
+    // (the participant pressing Escape) must still be allowed to run — the
+    // field-observed rescue that saved BoldBronzeSushi187's data.
+    expect(instance._experiment.experimentEnded).toBe(false);
+    resolveSave();
+    await q;
+    expect(instance._experiment.experimentEnded).toBe(true);
+  });
+
+  test("the beforeunload listener (unload sync-save) is removed only AFTER the save completes", async () => {
+    const { instance } = makeQuitStub();
+    instance._config.environment =
+      ExperimentHandler.Environment.SERVER;
+    const removeEventListener = jest.fn();
+    globalThis.window = {
+      removeEventListener,
+      addEventListener: jest.fn(),
+    };
+    let resolveSave = () => {};
+    instance._experiment.save.mockImplementation(
+      () =>
+        new Promise((res) => {
+          resolveSave = res;
+        }),
+    );
+
+    const q = instance.quit({ isCompleted: true });
+    await new Promise((r) => setTimeout(r, 0));
+    // Closing the tab mid-save must still fire PsychoJS's unload sync-save —
+    // how SpicyBrownCake404's data reached the server in the field.
+    expect(removeEventListener).not.toHaveBeenCalled();
+    resolveSave();
+    await q;
+    expect(removeEventListener).toHaveBeenCalledTimes(1);
+    expect(removeEventListener.mock.calls[0][0]).toBe("beforeunload");
+    delete globalThis.window;
+  });
+
+  test("an incomplete session still saves when saveIncompleteResults is false (threshold contract: never skip a save)", async () => {
+    const { instance, save } = makeQuitStub({ saveIncompleteResults: false });
+
+    await instance.quit({ isCompleted: false });
+
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+});

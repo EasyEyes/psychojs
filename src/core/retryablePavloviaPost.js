@@ -1,6 +1,12 @@
-import { getRetryDelayMs, wait } from "../../../preprocess/retry";
+import {
+  getRetryDelayMs,
+  notifyRetryAttempt,
+  waitForRetryDelay,
+} from "../../../preprocess/retry";
 
-const _RETRYABLE_STATUSES = new Set([429, 502, 503, 504]);
+// 408/429/5xx-transient: server-side or timing blips that a retry can
+// clear; permanent failures (400/403/409/501…) throw immediately.
+const _RETRYABLE_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
 
 export async function _retryablePavloviaPost(url, data) {
 	let attempt = 0;
@@ -27,7 +33,8 @@ export async function _retryablePavloviaPost(url, data) {
 					console.warn(
 						`_retryablePavloviaPost: network error, retrying in ${delay}ms`,
 					);
-					await wait(delay);
+					notifyRetryAttempt(attempt, {});
+					await waitForRetryDelay(delay);
 					continue;
 				}
 				throw e;
@@ -47,7 +54,8 @@ export async function _retryablePavloviaPost(url, data) {
 				console.warn(
 					`_retryablePavloviaPost: status ${status}, retrying in ${delay}ms`,
 				);
-				await wait(delay);
+				notifyRetryAttempt(attempt, { status });
+				await waitForRetryDelay(delay);
 				continue;
 			}
 

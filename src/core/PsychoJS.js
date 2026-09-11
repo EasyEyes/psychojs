@@ -494,27 +494,26 @@ export class PsychoJS
 		console.log("!. PsychoJS.quit()");
 		this.logger.info("[PsychoJS] Quit.");
 
-		this._experiment.experimentEnded = true;
-		this._status = PsychoJS.Status.FINISHED;
-
 		try
 		{
 			// stop the main scheduler:
 			this._scheduler.stop();
-
-			// remove the beforeunload listener:
-			if (this.getEnvironment() === ExperimentHandler.Environment.SERVER)
-			{
-				window.removeEventListener("beforeunload", this.beforeunloadCallback);
-			}
 
 			// save the results and the logs of the experiment:
 			// this.gui.dialog({
 			// 	warning: doNotCloseMessage,
 			// 	showOK: false,
 			// });
-			this.gui.displayMessage({message:null,warning: doNotCloseMessage, error : null})
-			if (!skipSave && (isCompleted || this._config.experiment.saveIncompleteResults))
+			// An empty doNotCloseMessage suppresses the wait message (the caller
+			// renders its own saving indicator; a second one would double-render).
+			if (doNotCloseMessage) {
+				this.gui.displayMessage({message:null,warning: doNotCloseMessage, error : null})
+			}
+			// Always save, completed or not (glossary:
+			// _pavloviaSavePartialResultsBool defaults TRUE and is not yet wired
+			// through the compiler; the unload path still honors the Pavlovia
+			// dashboard setting).
+			if (!skipSave)
 			{
 				if (!this._serverMsg.has("__noOutput"))
 				{
@@ -527,6 +526,18 @@ export class PsychoJS
 						console.error("Failed to flush logger, in PsychoJS.quit", e);
 					}
 				}
+			}
+
+			// The save has settled (or was skipped): only NOW mark the experiment
+			// ended and disarm the unload listener. While the save is in flight,
+			// a second quit must still be allowed (a fresh save is the rescue for
+			// a stalled one) and closing the tab must still fire the unload
+			// sync-save.
+			this._experiment.experimentEnded = true;
+			this._status = PsychoJS.Status.FINISHED;
+			if (this.getEnvironment() === ExperimentHandler.Environment.SERVER)
+			{
+				window.removeEventListener("beforeunload", this.beforeunloadCallback);
 			}
 
 			console.log("!. additionalCSVData in PsychoJS.quit()", additionalCSVData);
