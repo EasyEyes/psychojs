@@ -14,8 +14,25 @@ import { PsychObject } from "../util/PsychObject.js";
 import * as util from "../util/Util.js";
 import { Scheduler } from "../util/Scheduler.js";
 import { PsychoJS } from "./PsychoJS.js";
-import { _retryablePavloviaPost } from "./retryablePavloviaPost.js";
-export { _retryablePavloviaPost };
+
+const _pavloviaPost = async (url, data) =>
+{
+	const serverData = await fetch(url, {
+		method: "POST",
+		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		body: new URLSearchParams(data).toString(),
+	});
+
+	if (!serverData.ok)
+	{
+		throw Object.assign(
+			new Error(`Pavlovia POST failed with status ${serverData.status} ${serverData.statusText}`),
+			{ status: serverData.status, statusText: serverData.statusText },
+		);
+	}
+
+	return serverData;
+};
 
 /**
  * <p>This manager handles all communications between the experiment running in the participant's browser and the [pavlovia.org]{@link http://pavlovia.org} server, <em>in an asynchronous manner</em>.</p>
@@ -750,7 +767,7 @@ export class ServerManager extends PsychObject
 			return;
 		}
 
-		// asynchronously query the pavlovia server with retry:
+		// asynchronously query the Pavlovia server once:
 		const data = {
 			key,
 			value,
@@ -758,7 +775,7 @@ export class ServerManager extends PsychObject
 
 		try
 		{
-			const serverData = await _retryablePavloviaPost(url, data);
+			const serverData = await _pavloviaPost(url, data);
 			this.setStatus(ServerManager.Status.READY);
 			return Object.assign(response, { serverData });
 		}
@@ -823,7 +840,7 @@ export class ServerManager extends PsychObject
 
 		try
 		{
-			const serverData = await _retryablePavloviaPost(url, data);
+			const serverData = await _pavloviaPost(url, data);
 			this.setStatus(ServerManager.Status.READY);
 			return Object.assign(response, { serverData });
 		}

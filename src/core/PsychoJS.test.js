@@ -100,6 +100,44 @@ describe("PsychoJS.quit() doNotCloseMessage suppression", () => {
 import { ExperimentHandler } from "../data/ExperimentHandler.js";
 
 describe("PsychoJS.quit() — teardown must wait for the save", () => {
+  test("a failed final save rejects and never shows the safe-to-close screen", async () => {
+    const { instance } = makeQuitStub();
+    const uploadFailure = Object.assign(new Error("Gateway Timeout"), {
+      status: 504,
+    });
+    instance._experiment.save.mockRejectedValueOnce(uploadFailure);
+
+    await expect(instance.quit({ isCompleted: true })).rejects.toBe(
+      uploadFailure,
+    );
+
+    expect(instance._gui.dialog).toHaveBeenCalledWith({ error: uploadFailure });
+    expect(instance._gui.displayMessage).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("safe to close"),
+      }),
+    );
+    expect(instance._experiment.experimentEnded).toBe(false);
+  });
+
+  test("a failed final log upload rejects and never shows the safe-to-close screen", async () => {
+    const { instance } = makeQuitStub();
+    const logFailure = Object.assign(new Error("Log upload failed"), {
+      status: 504,
+    });
+    instance._logger.flush.mockRejectedValueOnce(logFailure);
+
+    await expect(instance.quit({ isCompleted: true })).rejects.toBe(logFailure);
+
+    expect(instance._gui.dialog).toHaveBeenCalledWith({ error: logFailure });
+    expect(instance._gui.displayMessage).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("safe to close"),
+      }),
+    );
+    expect(instance._experiment.experimentEnded).toBe(false);
+  });
+
   test("experimentEnded is set only AFTER the save resolves (a stalled save must not mark the experiment ended)", async () => {
     const { instance } = makeQuitStub();
     let resolveSave = () => {};
