@@ -520,11 +520,7 @@ export class PsychoJS
 					// ! save data to .csv / .db
 					await this._experiment.save();
 					// ! save log to .log.gz
-					try {
-						await this._logger.flush();
-					} catch (e) {
-						console.error("Failed to flush logger, in PsychoJS.quit", e);
-					}
+					await this._logger.flush();
 				}
 			}
 
@@ -592,6 +588,7 @@ export class PsychoJS
 		{
 			console.error(error);
 			this._gui.dialog({ error });
+			throw error;
 		}
 	}
 
