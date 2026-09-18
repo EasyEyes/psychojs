@@ -328,6 +328,7 @@ export class GUI
 	 * @param {Object} options
 	 * @param {string} options.message - the message to be displayed
 	 * @param {Object.<string, *>} options.error - an exception
+	 * @param {string} [options.participantMessage] - optional recovery guidance
 	 * @param {string} options.warning - a warning message
 	 * @param {boolean} [options.showOK=true] - specifies whether to show the OK button
 	 * @param {GUI.onOK} [options.onOK] - function called when the participant presses the OK button
@@ -336,6 +337,7 @@ export class GUI
 		message,
 		warning,
 		error,
+		participantMessage,
 		showOK = true,
 		onOK,
 		okText,
@@ -416,6 +418,7 @@ export class GUI
 
 				const runtimeError = buildRuntimeErrorMessage({
 					errorDescription: error,
+					participantMessage,
 					contextChain,
 					context,
 				});

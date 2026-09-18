@@ -478,21 +478,23 @@ export class PsychoJS
 	 * @async
 	 * @public
 	 */
-	async quit({
-	 message,
-	 isCompleted = false,
-	 skipSave = false,
-	 okText = "OK",
-	 okUrl = undefined,
-	 additionalCSVData = [],
-	 cursorTrackingData = [],
-	 showSafeToCloseDialog = true,
-	 safeTocloseMessage= "Thank you. It's now safe to close this browser tab.",
-	 doNotCloseMessage = "<b>Thank you. You're done. DO NOT CLOSE THIS WINDOW.</b> It will close once your data are safely saved. Closing this window will prevent saving of your data, and they will be lost. This may take a few minutes. Thank you for your patience."
-	} = {})
+	async quit(options = {})
 	{
+		const {
+			message,
+			isCompleted = false,
+			skipSave = false,
+			okText = "OK",
+			okUrl = undefined,
+			additionalCSVData = [],
+			cursorTrackingData = [],
+			showSafeToCloseDialog = true,
+			safeTocloseMessage= "Thank you. It's now safe to close this browser tab.",
+			doNotCloseMessage = "<b>Thank you. You're done. DO NOT CLOSE THIS WINDOW.</b> It will close once your data are safely saved. Closing this window will prevent saving of your data, and they will be lost. This may take a few minutes. Thank you for your patience."
+		} = options;
 		console.log("!. PsychoJS.quit()");
 		this.logger.info("[PsychoJS] Quit.");
+		let savingResults = false;
 
 		try
 		{
@@ -518,7 +520,9 @@ export class PsychoJS
 				if (!this._serverMsg.has("__noOutput"))
 				{
 					// ! save data to .csv / .db
+					savingResults = true;
 					await this._experiment.save();
+					savingResults = false;
 					// ! save log to .log.gz
 					await this._logger.flush();
 				}
@@ -587,7 +591,22 @@ export class PsychoJS
 		catch (error)
 		{
 			console.error(error);
-			this._gui.dialog({ error });
+			if (isCompleted && savingResults)
+			{
+				const participantMessage =
+					"You completed the study, but EasyEyes could not save your results. "
+					+ "Keep this tab open and press OK to try saving them again. "
+					+ "When saving succeeds, your study completion will be confirmed.";
+				this._gui.dialog({
+					error,
+					participantMessage,
+					onOK: () => this.quit(options).catch(() => undefined),
+				});
+			}
+			else
+			{
+				this._gui.dialog({ error });
+			}
 			throw error;
 		}
 	}

@@ -111,13 +111,45 @@ describe("PsychoJS.quit() — teardown must wait for the save", () => {
       uploadFailure,
     );
 
-    expect(instance._gui.dialog).toHaveBeenCalledWith({ error: uploadFailure });
+    expect(instance._gui.dialog).toHaveBeenCalledWith({
+      error: uploadFailure,
+      participantMessage: expect.stringContaining("press OK"),
+      onOK: expect.any(Function),
+    });
     expect(instance._gui.displayMessage).not.toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.stringContaining("safe to close"),
       }),
     );
     expect(instance._experiment.experimentEnded).toBe(false);
+  });
+
+  test("OK retries a completed study's failed result save as completed", async () => {
+    const { instance, save } = makeQuitStub();
+    const uploadFailure = new Error("Gateway Timeout");
+    save.mockRejectedValueOnce(uploadFailure);
+
+    await expect(instance.quit({ isCompleted: true })).rejects.toBe(
+      uploadFailure,
+    );
+
+    const { onOK } = instance._gui.dialog.mock.calls[0][0];
+    await onOK();
+
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(instance._experiment.experimentEnded).toBe(true);
+  });
+
+  test("an incomplete study's save failure keeps the standard error dialog", async () => {
+    const { instance, save } = makeQuitStub();
+    const uploadFailure = new Error("Gateway Timeout");
+    save.mockRejectedValueOnce(uploadFailure);
+
+    await expect(instance.quit({ isCompleted: false })).rejects.toBe(
+      uploadFailure,
+    );
+
+    expect(instance._gui.dialog).toHaveBeenCalledWith({ error: uploadFailure });
   });
 
   test("a failed final log upload rejects and never shows the safe-to-close screen", async () => {
