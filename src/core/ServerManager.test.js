@@ -126,7 +126,7 @@ describe("ServerManager.uploadData — async path", () => {
     );
 
     await expect(upload).rejects.toMatchObject({
-      context: "when uploading participant's results for experiment: user/exp",
+      context: "While saving results of study: user/exp",
       error: "504 Gateway Time-out (HTTP 504: error)",
     });
   });

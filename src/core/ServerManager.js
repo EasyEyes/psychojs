@@ -746,7 +746,7 @@ export class ServerManager extends PsychObject
 	{
 		const response = {
 			origin: "ServerManager.uploadData",
-			context: "when uploading participant's results for experiment: " + this._psychoJS.config.experiment.fullpath,
+			context: "While saving results of study: " + this._psychoJS.config.experiment.fullpath,
 		};
 
 		this._psychoJS.logger.debug("uploading data for experiment: " + this._psychoJS.config.experiment.fullpath);
