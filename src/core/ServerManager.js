@@ -742,7 +742,7 @@ export class ServerManager extends PsychObject
 	 *
 	 * @returns {Promise<ServerManager.UploadDataPromise>} the response
 	 */
-	async uploadData(key, value, sync = false)
+	uploadData(key, value, sync = false)
 	{
 		const response = {
 			origin: "ServerManager.uploadData",
@@ -757,33 +757,44 @@ export class ServerManager extends PsychObject
 			+ "/sessions/" + this._psychoJS.config.session.token
 			+ "/results";
 
-		// synchronous query the pavlovia server (fire-and-forget, cannot be retried):
+		// synchronous query the pavlovia server:
 		if (sync)
 		{
 			const formData = new FormData();
 			formData.append("key", key);
 			formData.append("value", value);
 			navigator.sendBeacon(url, formData);
-			return;
 		}
-
-		// asynchronously query the Pavlovia server once:
-		const data = {
-			key,
-			value,
-		};
-
-		try
+		// asynchronously query the pavlovia server:
+		else
 		{
-			const serverData = await _pavloviaPost(url, data);
-			this.setStatus(ServerManager.Status.READY);
-			return Object.assign(response, { serverData });
-		}
-		catch (error)
-		{
-			this.setStatus(ServerManager.Status.ERROR);
-			console.error("error:", error);
-			throw Object.assign(response, { error });
+			const self = this;
+			return new Promise((resolve, reject) =>
+			{
+				const data = {
+					key,
+					value,
+				};
+
+				jQuery.post(url, data, null, "json")
+					.done((serverData, textStatus) =>
+					{
+						self.setStatus(ServerManager.Status.READY);
+						resolve(Object.assign(response, { serverData }));
+					})
+					.fail((jqXHR, textStatus, errorThrown) =>
+					{
+						self.setStatus(ServerManager.Status.ERROR);
+
+						const errorMsg = util.getRequestError(jqXHR, textStatus, errorThrown);
+						console.error("error:", errorMsg);
+
+						// Include more detailed error information in the rejection
+						const jqXHRStatus = jqXHR && jqXHR.status ? jqXHR.status : "";
+						const detailedError = `${errorMsg} (HTTP ${jqXHRStatus}: ${textStatus})`;
+						reject(Object.assign(response, { error: detailedError }));
+					});
+			});
 		}
 	}
 
@@ -1469,4 +1480,3 @@ ServerManager.ResourceStatus = {
 	 */
 	DOWNLOADED: Symbol.for("DOWNLOADED"),
 };
-

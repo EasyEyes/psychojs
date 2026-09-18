@@ -11,6 +11,22 @@ import { ServerManager } from "./ServerManager.js";
 
 const ok = () => ({ status: 200, statusText: "OK", ok: true });
 
+function mockJQueryPost() {
+  const callbacks = {};
+  const request = {
+    done: jest.fn((callback) => {
+      callbacks.done = callback;
+      return request;
+    }),
+    fail: jest.fn((callback) => {
+      callbacks.fail = callback;
+      return request;
+    }),
+  };
+  global.jQuery = { post: jest.fn(() => request) };
+  return callbacks;
+}
+
 function makeConfig() {
   return {
     pavlovia: { URL: "https://pavlovia.org" },
@@ -51,43 +67,68 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.restoreAllMocks();
+  delete global.jQuery;
 });
 
 // ─── uploadData async path ─────────────────────────────────────────────────
 
 describe("ServerManager.uploadData — async path", () => {
   test("posts the results URL and data once", async () => {
-    global.fetch.mockResolvedValueOnce(ok());
+    const callbacks = mockJQueryPost();
     const sm = makeStub();
 
-    await sm.uploadData("results.csv", "col\nval");
+    const upload = sm.uploadData("results.csv", "col\nval");
+    callbacks.done({ saved: true }, "success");
+    await upload;
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    const [url, options] = global.fetch.mock.calls[0];
+    expect(global.jQuery.post).toHaveBeenCalledTimes(1);
+    const [url, data, callback, dataType] = global.jQuery.post.mock.calls[0];
     expect(url).toContain("/sessions/tok123/results");
-    expect(options.body).toBe("key=results.csv&value=col%0Aval");
-    expect(options.signal).toBeUndefined();
+    expect(data).toEqual({ key: "results.csv", value: "col\nval" });
+    expect(callback).toBeNull();
+    expect(dataType).toBe("json");
   });
 
   test("sets status READY and resolves on success", async () => {
-    global.fetch.mockResolvedValueOnce(ok());
+    const callbacks = mockJQueryPost();
     const sm = makeStub();
 
-    const result = await sm.uploadData("k", "v");
+    const upload = sm.uploadData("k", "v");
+    callbacks.done({ saved: true }, "success");
+    const result = await upload;
 
     expect(sm.setStatus).toHaveBeenCalledWith(ServerManager.Status.READY);
     expect(result).toMatchObject({ origin: "ServerManager.uploadData" });
   });
 
   test("sets status ERROR and rejects on failure", async () => {
-    const cause = Object.assign(new Error("forbidden"), { status: 403 });
-    global.fetch.mockRejectedValueOnce(cause);
+    const callbacks = mockJQueryPost();
     const sm = makeStub();
 
-    await expect(sm.uploadData("k", "v")).rejects.toMatchObject({
+    const upload = sm.uploadData("k", "v");
+    callbacks.fail({ status: 403, responseText: "forbidden" }, "error", "Forbidden");
+
+    await expect(upload).rejects.toMatchObject({
       origin: "ServerManager.uploadData",
     });
     expect(sm.setStatus).toHaveBeenCalledWith(ServerManager.Status.ERROR);
+  });
+
+  test("formats a 504 exactly as commit 5674d9e6", async () => {
+    const callbacks = mockJQueryPost();
+    const sm = makeStub();
+
+    const upload = sm.uploadData("results.csv", "data");
+    callbacks.fail(
+      { status: 504, responseText: "504 Gateway Time-out" },
+      "error",
+      "Gateway Time-out",
+    );
+
+    await expect(upload).rejects.toMatchObject({
+      context: "when uploading participant's results for experiment: user/exp",
+      error: "504 Gateway Time-out (HTTP 504: error)",
+    });
   });
 });
 
