@@ -429,6 +429,140 @@ export const setDitherLsb = (lsb) => {
 	return true;
 };
 
+// Temporary pipeline changes for the perceptual demos on the ColorCAL
+// page. begin/end bracket one viewing and put the boot configuration back,
+// including a dither filter the demo had to install because the experiment
+// booted with _screenDitherBool=FALSE.
+let demoSnapshot = null;
+
+const filterPool = () =>
+	state.renderer && state.renderer.filter && state.renderer.filter.texturePool;
+
+const enableFloatFilterTextures = () => {
+	const gl = state.renderer && state.renderer.gl;
+	const pool = filterPool();
+	if (!gl || !pool) return false;
+	const renderable =
+		!!gl.getExtension("EXT_color_buffer_float") ||
+		!!gl.getExtension("EXT_color_buffer_half_float");
+	if (!renderable) return false;
+	if (pool.textureOptions.type !== PIXI.TYPES.HALF_FLOAT) {
+		pool.textureOptions.type = PIXI.TYPES.HALF_FLOAT;
+		// Drop 8-bit textures already in the pool so the next filter pass
+		// cannot reuse one and quantize the demo before dither sees it.
+		pool.clear(true);
+	}
+	state.floatFilterTextures = true;
+	return true;
+};
+
+/**
+ * Tag the drawing buffer. The browser converts later composites from this
+ * space to the display profile. Returns false when the context rejects the
+ * tag (the property stays at its previous value).
+ *
+ * @param {"srgb"|"display-p3"} space
+ * @returns {boolean}
+ */
+export const setDrawingBufferColorSpace = (space) => {
+	if (space !== "srgb" && space !== "display-p3") return false;
+	const gl = state.renderer && state.renderer.gl;
+	if (!gl || !("drawingBufferColorSpace" in gl)) return false;
+	try {
+		gl.drawingBufferColorSpace = space;
+	} catch (e) {
+		return false;
+	}
+	if (gl.drawingBufferColorSpace !== space) return false;
+	state.colorSpaceApplied = space;
+	return true;
+};
+
+/**
+ * Remember the boot pipeline and make sure filter textures can hold values
+ * between 8-bit codes. Call endPipelineDemo() when the demo closes.
+ *
+ * @returns {{floatTextures: boolean, colorSpace: string}}
+ */
+export const beginPipelineDemo = () => {
+	if (demoSnapshot) {
+		return {
+			floatTextures: state.floatFilterTextures,
+			colorSpace: state.colorSpaceApplied,
+		};
+	}
+	const pool = filterPool();
+	demoSnapshot = {
+		colorSpace: state.colorSpaceApplied,
+		ditherActive: state.ditherActive,
+		createdDither: false,
+		poolType: pool ? pool.textureOptions.type : undefined,
+		floatFilterTextures: state.floatFilterTextures,
+	};
+	return {
+		floatTextures: enableFloatFilterTextures(),
+		colorSpace: state.colorSpaceApplied,
+	};
+};
+
+/**
+ * Put back the color-space tag, the dither pass, and the filter-texture
+ * format that were in effect before beginPipelineDemo().
+ */
+export const endPipelineDemo = () => {
+	if (!demoSnapshot) return;
+	const snap = demoSnapshot;
+	demoSnapshot = null;
+	if (state.colorSpaceApplied !== snap.colorSpace)
+		setDrawingBufferColorSpace(snap.colorSpace);
+	if (snap.createdDither && state.ditherFilter) {
+		if (state.rootContainer) state.rootContainer.filters = null;
+		try {
+			state.ditherFilter.destroy();
+		} catch (e) {
+			/* filter is already detached */
+		}
+		state.ditherFilter = null;
+		state.ditherActive = false;
+	} else if (snap.ditherActive) {
+		resumeDither();
+	} else if (state.ditherActive) {
+		suspendDither();
+	}
+	const pool = filterPool();
+	if (
+		pool &&
+		snap.poolType !== undefined &&
+		pool.textureOptions.type !== snap.poolType
+	) {
+		pool.textureOptions.type = snap.poolType;
+		pool.clear(true);
+	}
+	state.floatFilterTextures = snap.floatFilterTextures;
+};
+
+/**
+ * Turn the shipped noisy-bit pass on or off for a demo that has called
+ * beginPipelineDemo(). Installs that pass when the experiment booted
+ * without it, provided float16 filter textures are available.
+ *
+ * @param {boolean} on
+ * @returns {boolean} whether the requested state is now active
+ */
+export const setPipelineDemoDither = (on) => {
+	if (!on) {
+		if (state.ditherActive) suspendDither();
+		return !state.ditherActive;
+	}
+	if (!state.ditherFilter) {
+		if (!state.rootContainer || !enableFloatFilterTextures()) return false;
+		state.ditherFilter = makeDitherFilter(config.ditherLsb);
+		state.rootContainer.filterArea = state.renderer.screen;
+		if (demoSnapshot) demoSnapshot.createdDither = true;
+	}
+	return resumeDither();
+};
+
 // ------------------------------- colors --------------------------------
 
 /**
