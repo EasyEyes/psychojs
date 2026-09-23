@@ -499,6 +499,15 @@ export class GUI
 				dialogTitleElement.setAttribute("dir", titleDirection);
 				dialogTitleElement.setAttribute("lang", titleLanguage);
 			}
+			// Apply the phrase language's direction to the complete widget, including
+			// its controls. Explicitly directed content, such as English technical
+			// details inside an RTL study, keeps its own direction.
+			const dialogWidgetElement = document.getElementsByClassName("ui-dialog")[0];
+			if (dialogWidgetElement && typeof error !== "undefined")
+			{
+				dialogWidgetElement.setAttribute("dir", titleDirection);
+				dialogWidgetElement.setAttribute("lang", titleLanguage);
+			}
 			const dialogCloseButton = document.getElementsByClassName("ui-dialog-titlebar-close")[0];
 			if (dialogCloseButton){
 				dialogCloseButton.innerHTML = "X";
