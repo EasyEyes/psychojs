@@ -329,6 +329,8 @@ export class GUI
 	 * @param {string} options.message - the message to be displayed
 	 * @param {Object.<string, *>} options.error - an exception
 	 * @param {string} [options.participantMessage] - optional recovery guidance
+	 * @param {string} [options.participantMessageKey] - localized recovery guidance
+	 * @param {string} [options.buttonTextKey] - localized action button text
 	 * @param {string} options.warning - a warning message
 	 * @param {boolean} [options.showOK=true] - specifies whether to show the OK button
 	 * @param {GUI.onOK} [options.onOK] - function called when the participant presses the OK button
@@ -338,6 +340,8 @@ export class GUI
 		warning,
 		error,
 		participantMessage,
+		participantMessageKey,
+		buttonTextKey,
 		showOK = true,
 		onOK,
 		okText,
@@ -419,6 +423,8 @@ export class GUI
 				const runtimeError = buildRuntimeErrorMessage({
 					errorDescription: error,
 					participantMessage,
+					participantMessageKey,
+					buttonTextKey,
 					contextChain,
 					context,
 				});
@@ -492,6 +498,15 @@ export class GUI
 			{
 				dialogTitleElement.setAttribute("dir", titleDirection);
 				dialogTitleElement.setAttribute("lang", titleLanguage);
+			}
+			// Apply the phrase language's direction to the complete widget, including
+			// its controls. Explicitly directed content, such as English technical
+			// details inside an RTL study, keeps its own direction.
+			const dialogWidgetElement = document.getElementsByClassName("ui-dialog")[0];
+			if (dialogWidgetElement && typeof error !== "undefined")
+			{
+				dialogWidgetElement.setAttribute("dir", titleDirection);
+				dialogWidgetElement.setAttribute("lang", titleLanguage);
 			}
 			const dialogCloseButton = document.getElementsByClassName("ui-dialog-titlebar-close")[0];
 			if (dialogCloseButton){

@@ -593,13 +593,10 @@ export class PsychoJS
 			console.error(error);
 			if (isCompleted && savingResults)
 			{
-				const participantMessage =
-					"You completed the study, but EasyEyes could not save your results. "
-					+ "Keep this tab open and press OK to try saving them again. "
-					+ "When saving succeeds, your study completion will be confirmed.";
 				this._gui.dialog({
 					error,
-					participantMessage,
+					participantMessageKey: "EE_504UploadError",
+					buttonTextKey: "EE_SaveButton",
 					onOK: () => this.quit(options).catch(() => undefined),
 				});
 			}

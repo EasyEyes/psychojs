@@ -113,7 +113,8 @@ describe("PsychoJS.quit() — teardown must wait for the save", () => {
 
     expect(instance._gui.dialog).toHaveBeenCalledWith({
       error: uploadFailure,
-      participantMessage: expect.stringContaining("press OK"),
+      participantMessageKey: "EE_504UploadError",
+      buttonTextKey: "EE_SaveButton",
       onOK: expect.any(Function),
     });
     expect(instance._gui.displayMessage).not.toHaveBeenCalledWith(
@@ -124,7 +125,7 @@ describe("PsychoJS.quit() — teardown must wait for the save", () => {
     expect(instance._experiment.experimentEnded).toBe(false);
   });
 
-  test("OK retries a completed study's failed result save as completed", async () => {
+  test("Save retries a completed study's failed result save as completed", async () => {
     const { instance, save } = makeQuitStub();
     const uploadFailure = new Error("Gateway Timeout");
     save.mockRejectedValueOnce(uploadFailure);
