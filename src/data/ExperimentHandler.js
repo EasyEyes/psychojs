@@ -577,7 +577,7 @@ export class ExperimentHandler extends PsychObject
 		const inputParameters = [...this._psychoJS.inputParameters];
 		const excludeAttributes = ["expName", "name", "blockNumber", "_s", "setSession", "targetMeasuredDurationFrames", "label", "!experimentFilename"];
 		attributes = attributes.filter(a => !excludeAttributes.includes(a));
-		const prependAttributes = ["URL", "experiment", "date"];
+		const prependAttributes = ["URL", "experiment", "easyEyesVersion", "date"];
 		const inputAttributes = inputParameters.filter(a => attributes.includes(a));
 		const outputAttributes = attributes.filter(a => !inputParameters.includes(a) && !prependAttributes.includes(a));
 		const orderedAttributes = [...prependAttributes, ...inputAttributes, ...outputAttributes];
