@@ -14,6 +14,7 @@ import { PsychObject } from "../util/PsychObject.js";
 import * as util from "../util/Util.js";
 import { Scheduler } from "../util/Scheduler.js";
 import { PsychoJS } from "./PsychoJS.js";
+import { uploadWhenPageClosing } from "./syncUpload.js";
 
 const _pavloviaPost = async (url, data) =>
 {
@@ -763,7 +764,18 @@ export class ServerManager extends PsychObject
 			const formData = new FormData();
 			formData.append("key", key);
 			formData.append("value", value);
-			navigator.sendBeacon(url, formData);
+			// sendBeacon silently refuses payloads over the browser's size cap,
+			// dropping the whole results file; uploadWhenPageClosing falls back
+			// to a synchronous XHR POST when the beacon will not take it.
+			const via = uploadWhenPageClosing(url, formData);
+			if (via === "none")
+			{
+				// Optional chaining: this runs while the page is dying — logging
+				// must never throw from the unload path.
+				this._psychoJS.logger?.warn?.(
+					"[PsychoJS] Close-time results upload failed on both transports."
+				);
+			}
 		}
 		// asynchronously query the pavlovia server:
 		else
