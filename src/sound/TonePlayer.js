@@ -65,6 +65,13 @@ export class TonePlayer extends SoundPlayer
 		// Tone.js Loop:
 		this._toneLoop = null;
 
+		// Last start/end times handed to the synth (see playToneCallback):
+		// kept strictly increasing and non-overlapping so two beeps in the
+		// same AudioContext quantum cannot trip Tone's start()/StateTimeline
+		// assertions.
+		this._lastToneStartTime = undefined;
+		this._lastToneEndTime = undefined;
+
 		if (this._autoLog)
 		{
 			this._psychoJS.experimentLogger.exp(`Created ${this.name} = ${this.toString()}`);
@@ -231,7 +238,30 @@ export class TonePlayer extends SoundPlayer
 		{
 			playToneCallback = () =>
 			{
-				self._synth.triggerAttackRelease(self._note, actualDuration_s, Tone.context.currentTime);
+				// With Tone.context.lookAhead = 0 (set in _initSoundLibrary to
+				// avoid a note-trigger delay), two plays in the same JS task read
+				// the same audio clock value and Tone throws: Source.start()
+				// requires a strictly greater start, and the oscillator/envelope
+				// StateTimeline rejects a retrigger before the previous note's
+				// scheduled stop. Schedule past both; the nudges (1e-6 s) are far
+				// below one audio sample (~2.3e-5 s at 44.1 kHz) — a same-quantum
+				// double beep plays sequentially instead of crashing the routine.
+				const now = Tone.context.currentTime;
+				let startTime = now;
+				if (self._lastToneStartTime !== undefined)
+				{
+					const earliest = Math.max(
+						self._lastToneStartTime + 1e-6,
+						self._lastToneEndTime,
+					);
+					if (startTime < earliest)
+					{
+						startTime = earliest;
+					}
+				}
+				self._lastToneStartTime = startTime;
+				self._lastToneEndTime = startTime + actualDuration_s;
+				self._synth.triggerAttackRelease(self._note, actualDuration_s, startTime);
 			};
 		}
 		else
@@ -288,6 +318,15 @@ export class TonePlayer extends SoundPlayer
 		{
 			// trigger the release of the sound, immediately:
 			this._synth.triggerRelease();
+
+			// The release supersedes any previously scheduled stop: a replay
+			// after stop() must not be pushed out to the abandoned note's
+			// would-be end — lethal for indefinite tones (duration_s = -1),
+			// whose scheduled end is 1e6 s away (a silent, not crashed, beep).
+			if (this._lastToneStartTime !== undefined)
+			{
+				this._lastToneEndTime = Tone.context.currentTime;
+			}
 
 			// clear the repeat event if need be:
 			if (this._toneId)
