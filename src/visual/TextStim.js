@@ -114,6 +114,10 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		// Instruction text
 		this._isInstruction = isInstruction || false
 
+		// Display-only scale factor for the existing texture (see
+		// setRenderScale). 1 = native size.
+		this._renderScale = 1;
+
 		this._addAttribute(
 			"characterSet",
 			characterSet,
@@ -728,6 +732,26 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 	}
 
 	/**
+	 * Scale-only display resize: multiply the existing texture by `scale`
+	 * WITHOUT re-rasterizing (no _needPixiUpdate — the glyph raster is
+	 * reused as-is and the displayed size becomes exact; the cost is a GPU
+	 * resample). setHeight, by contrast, rebuilds the texture at the new
+	 * size on the main thread. Used by EasyEyes' fontPreRender=buffer
+	 * reuse path (components/letter.js getTargetStim).
+	 *
+	 * @name module:visual.TextStim#setRenderScale
+	 * @public
+	 * @param {number} scale - factor on the native raster (1 = native)
+	 */
+	setRenderScale(scale)
+	{
+		this._renderScale = scale;
+		// Transform refresh only: _updateIfNeeded reapplies pixi.scale,
+		// position, anchor — but skips the texture rebuild.
+		this._needUpdate = true;
+	}
+
+	/**
 	 * Update the stimulus, if necessary.
 	 *
 	 * @name module:visual.TextStim#_updateIfNeeded
@@ -745,6 +769,9 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		if (this._needPixiUpdate)
 		{
 			this._needPixiUpdate = false;
+			// The new texture is native at the current height: any prior
+			// renderScale no longer applies.
+			this._renderScale = 1;
 
 			if (typeof this._pixi !== "undefined")
 			{
@@ -814,8 +841,8 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		const anchor = this._getAnchor();
 		[this._pixi.anchor.x, this._pixi.anchor.y] = anchor;
 
-		this._pixi.scale.x = this._flipHoriz ? -1 : 1;
-		this._pixi.scale.y = this._flipVert ? 1 : -1;
+		this._pixi.scale.x = (this._flipHoriz ? -1 : 1) * this._renderScale;
+		this._pixi.scale.y = (this._flipVert ? 1 : -1) * this._renderScale;
 
 		this._pixi.rotation = -this._ori * Math.PI / 180;
 		this._pixi.position = to_pixiPoint(this.pos, this.units, this.win);
