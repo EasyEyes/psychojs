@@ -186,6 +186,83 @@ export class Window extends PsychObject
 	}
 
 	/**
+	 * Rebuild the renderer on a fresh canvas after WebGL context death.
+	 *
+	 * A lost context cannot be revived on its own canvas (one context per
+	 * canvas element), and pixi v6 performs no recovery — every subsequent
+	 * draw silently no-ops while experiment logic continues, leaving the
+	 * participant with a frozen display. This recreates the renderer with
+	 * the same settings on a NEW canvas, swaps the DOM element, re-applies
+	 * the color pipeline, and re-attaches the mouse listeners. The root
+	 * container (and the stimuli on it) are renderer-agnostic: GPU
+	 * resources re-upload lazily through the new context on the next
+	 * render. Called automatically by EasyEyes immediately after a context
+	 * loss (components/rendererHealth.ts).
+	 *
+	 * @name module:core.Window#rebuildRenderer
+	 * @function
+	 * @public
+	 * @return {HTMLCanvasElement} the new canvas (the renderer's view)
+	 */
+	rebuildRenderer()
+	{
+		if (!this._renderer)
+		{
+			throw new Error("rebuildRenderer: no renderer to rebuild");
+		}
+		const oldRenderer = this._renderer;
+		const oldView = oldRenderer.view;
+
+		const newRenderer = PIXI.autoDetectRenderer({
+			width: this._size[0],
+			height: this._size[1],
+			backgroundColor: this.color.int,
+			resolution: oldRenderer.resolution,
+			preserveDrawingBuffer: true,
+		});
+		newRenderer.view.style.transform = "translatez(0)";
+		newRenderer.view.style.position = "absolute";
+		if (this._scaleMode.toLowerCase() === "nearest")
+		{
+			newRenderer.view.style.imageRendering = "pixelated";
+		}
+		else
+		{
+			newRenderer.view.style.imageRendering = "auto";
+		}
+
+		// Swap the canvas in place (or append if detached).
+		if (oldView.parentNode)
+		{
+			oldView.parentNode.replaceChild(newRenderer.view, oldView);
+		}
+		else
+		{
+			document.body.appendChild(newRenderer.view);
+		}
+
+		this._renderer = newRenderer;
+
+		try
+		{
+			// Float backbuffer / dither passes must be re-created on the
+			// new context. Failure must not brick recovery.
+			ColorPipeline.applyColorPipelineToRenderer(this._renderer, this._rootContainer);
+		}
+		catch (error)
+		{
+			console.warn("rebuildRenderer: color pipeline re-apply failed", error);
+		}
+
+		Window._resizePixiRenderer(this);
+
+		// PsychoJS' event manager listens on the renderer's view.
+		this.psychoJS.eventManager.addMouseListeners(this._renderer);
+
+		return newRenderer.view;
+	}
+
+	/**
 	 * Estimate the frame rate.
 	 *
 	 * @name module:core.Window#getActualFrameRate
