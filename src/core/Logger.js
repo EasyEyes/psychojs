@@ -14,6 +14,16 @@ import { MonotonicClock } from "../util/Clock.js";
 import * as util from "../util/Util.js";
 
 /**
+ * The server-log buffer (uploaded as .log.gz at save) is UNBOUNDED — data
+ * retention is paramount: it is the session's scientific record, and real
+ * field runs reached ~294k lines. Volume is kept sane by collapsing
+ * consecutive identical messages into one entry with a repeat count:
+ * per-frame attribute re-logging (autoLog stims set the same value every
+ * flip) measured as 99.7% of real session logs ("tinyHint: pos = [0,-540]"
+ * x43,230 in one session).
+ */
+
+/**
  * <p>This class handles a variety of loggers, e.g. a browser console one (mostly for debugging),
  * a remote one, etc.</p>
  *
@@ -139,12 +149,67 @@ export class Logger
 		}
 	 */
 
+		// Collapse consecutive duplicates — but ONLY for boilerplate levels
+		// (EXP/INFO/DEBUG): per-frame attribute re-logging (autoLog stims set
+		// the same value every flip) measured as 99.7% of real session logs.
+		// DATA/WARNING/ERROR/CRITICAL are scientific events — two identical
+		// keydowns are two events, each with its own timestamp — and are never
+		// merged. A differing obj means differing content: no merge either.
+		// The buffer itself is never truncated (data retention is paramount).
+		const isBoilerplate =
+			level === Logger.ServerLevel.EXP
+			|| level === Logger.ServerLevel.INFO
+			|| level === Logger.ServerLevel.DEBUG;
+		const objStr = util.toString(obj);
+		const last = this._serverLogs[this._serverLogs.length - 1];
+		if (isBoilerplate && last && last.msg === msg && last.level === level && last.obj === objStr)
+		{
+			last.repeatCount = (last.repeatCount ?? 1) + 1;
+			last.lastTime = time;
+			return;
+		}
+
 		this._serverLogs.push({
 			msg,
 			level,
 			time,
-			obj: util.toString(obj),
+			obj: objStr,
 		});
+	}
+
+	/**
+	 * Format the buffered server logs: one `time<TAB>LEVEL<TAB>message` line
+	 * per entry, plus a `[Logger] previous message repeated xN` marker line
+	 * (timestamped at the run's last occurrence) after every collapsed run.
+	 *
+	 * @name module:core.Logger#_formatServerLogs
+	 * @function
+	 * @private
+	 * @return {string} the formatted logs
+	 */
+	_formatServerLogs()
+	{
+		let formattedLogs = "";
+		for (const log of this._serverLogs)
+		{
+			let formattedLog = util.toString(log.time)
+				+ "\t" + Symbol.keyFor(log.level)
+				+ "\t" + log.msg;
+			if (log.obj !== "undefined")
+			{
+				formattedLog += "\t" + log.obj;
+			}
+			formattedLogs += formattedLog + "\n";
+
+			if (log.repeatCount > 1)
+			{
+				formattedLogs += util.toString(log.lastTime)
+					+ "\t" + Symbol.keyFor(log.level)
+					+ "\t[Logger] previous message repeated x" + (log.repeatCount - 1)
+					+ "\n";
+			}
+		}
+		return formattedLogs;
 	}
 
 	/**
@@ -241,21 +306,7 @@ export class Logger
 
 		this._psychoJS.logger.info("[PsychoJS] Flush server logs.");
 
-		// prepare the formatted logs:
-		let formattedLogs = "";
-		for (const log of this._serverLogs)
-		{
-			let formattedLog = util.toString(log.time)
-				+ "\t" + Symbol.keyFor(log.level)
-				+ "\t" + log.msg;
-			if (log.obj !== "undefined")
-			{
-				formattedLog += "\t" + log.obj;
-			}
-			formattedLog += "\n";
-
-			formattedLogs += formattedLog;
-		}
+		const formattedLogs = this._formatServerLogs();
 
 		// send logs to the server or display them in the console:
 		if (

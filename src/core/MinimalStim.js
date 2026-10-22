@@ -63,6 +63,12 @@ export class MinimalStim extends PsychObject
 	 */
 	setAutoDraw(autoDraw, log = false)
 	{
+		if (this._released && autoDraw)
+		{
+			this._refuseResurrection("setAutoDraw");
+			return;
+		}
+
 		this._setAttribute("autoDraw", autoDraw, log);
 
 		// autoDraw = true: add the stimulus to the draw list if it's not there already
@@ -86,6 +92,12 @@ export class MinimalStim extends PsychObject
 	 */
 	draw()
 	{
+		if (this._released)
+		{
+			this._refuseResurrection("draw");
+			return;
+		}
+
 		if (this.win)
 		{
 			const index = this._win._drawList.indexOf(this);
@@ -167,7 +179,34 @@ export class MinimalStim extends PsychObject
 	}
 
 	/**
+	 * Refuse to resurrect a released stimulus — loudly, but only once per
+	 * stimulus (draw runs every frame). Resurrection would silently rebuild
+	 * the pixi representation: the stimulus reappears and its fresh GPU
+	 * geometry leaks again.
+	 *
+	 * @name module:core.MinimalStim#_refuseResurrection
+	 * @function
+	 * @private
+	 */
+	_refuseResurrection(method)
+	{
+		if (!this._resurrectionWarned)
+		{
+			this._resurrectionWarned = true;
+			console.warn(`MinimalStim.${method}() on released stimulus "${this.name}": refused (a released stimulus is dead; create a new one).`);
+		}
+	}
+
+	/**
 	 * Release the PIXI representation, if there is one.
+	 *
+	 * Undraw first: a released stimulus must leave the draw list and the root
+	 * container, else the window keeps referencing a stimulus that no longer
+	 * has a pixi representation (and its GPU geometry is never disposed — pixi
+	 * keeps every rendered geometry until an explicit destroy).
+	 *
+	 * Terminal: a released stimulus must never be drawn again — draw() and
+	 * setAutoDraw(true) on it are refused. Create a new stimulus instead.
 	 *
 	 * @name module:core.MinimalStim#release
 	 * @function
@@ -177,6 +216,13 @@ export class MinimalStim extends PsychObject
 	 */
 	release(log = false)
 	{
+		if (this._released)
+		{
+			return;
+		}
+		this._released = true;
+
+		this.hide();
 		this._setAttribute("autoDraw", false, log);
 		this.status = PsychoJS.Status.STOPPED;
 
