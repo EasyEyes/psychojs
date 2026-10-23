@@ -36,20 +36,21 @@
     "pixi.js-legacy": "^6.5.8",
     "seedrandom": "^3.0.5",
     "tone": "^14.7.77",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
     "csslint": "^1.0.5",
-    "esbuild": "^0.15.16",
+    "esbuild": "^0.28.2",
     "eslint": "^8.29.0",
     "jest": "^30.2.0",
-    "jsdoc": "^3.6.11",
+    "jsdoc": "^4.0.5",
     "patch-package": "^8.0.1",
     "ts-jest": "^29.4.5"
   },
   "engines": {
-    "node": ">=14.15.0",
-    "npm": ">=6.14.8"
-  }
+    "node": ">=24.22.1 <25",
+    "npm": ">=11.19.1"
+  },
+  "packageManager": "npm@11.19.1"
 }
