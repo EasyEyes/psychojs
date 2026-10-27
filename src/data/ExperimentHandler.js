@@ -96,15 +96,17 @@ export class ExperimentHandler extends PsychObject
 
 			this._datetime = (typeof extraInfo.date !== "undefined")
 			? extraInfo.date
-			: MonotonicClock.getDateStr();
+			: this.getDateTimeString();
 
-		// ! controls final data file name
+		// ! controls final data file name — and must match what save() uploads:
+		// participant_[prolificID_]experiment_session_date[ timezone]. The
+		// session segment keeps the historical on-disk name format intact.
 		this._addAttribute(
 			"dataFileName",
 			dataFileName,
 			`${this._participant}_${
 				prolificParticipant ? `${prolificParticipant}_` : ""
-			}${this._experimentName}_${this._datetime}`
+			}${this._experimentName}_${this._session}_${this._datetime}`
 		);
 
 		// loop handlers:
@@ -346,19 +348,13 @@ export class ExperimentHandler extends PsychObject
 			// prepend BOM
 			const csv = "\ufeff" + XLSX.utils.sheet_to_csv(worksheet);
 
-			// upload data to the pavlovia server or offer them for download:
-			// const filenameWithoutPath = this._dataFileName.split(/[\\/]/).pop();
-			const info = this._psychoJS.experiment.getExtraInfo();
-			const participant = info.participant || "PARTICIPANT";
-			const prolificParticipant = info.ProlificParticipantID || undefined;
-			const experimentName = this._psychoJS.config.experiment.name;
-			const session = info.session || "SESSION";
-			const datetime = info.date || MonotonicClock.getDateStr();
-
-			const filenameWithoutPath = `${participant}_${
-				prolificParticipant ? `${prolificParticipant}_` : ""
-			}${experimentName}_${session}_${datetime}`;
-			const key = `${filenameWithoutPath}${tag}.csv`;
+			// upload data to the pavlovia server or offer them for download.
+			// The filename was fixed once, at construction (this._dataFileName
+			// — "controls final data file name"): reusing it keeps every save of
+			// this experiment in ONE server file. Rebuilding it from info.date or
+			// the clock spawned a new timestamped CSV per early partial/unload
+			// save, which downstream tools listed as separate sessions.
+			const key = `${this._dataFileName}${tag}.csv`;
 
 			
 			if (
