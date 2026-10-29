@@ -15,10 +15,7 @@ import { Scheduler } from "../util/Scheduler.js";
 import * as util from "../util/Util.js";
 import { PsychoJS } from "./PsychoJS.js";
 import { ServerManager } from "./ServerManager.js";
-import { paramReader } from "../../../threshold.js";
-import { psychoJS } from "../../../components/globalPsychoJS.js";
-import { buildErrorContext } from "../../../components/errorContext.js";
-import { buildRuntimeErrorMessage, formatErrorContextAsText } from "../../../components/runtimeErrorMessage.js";
+import { getEasyEyesContext } from "../util/EasyEyesContext.js";
 
 /**
  * @class
@@ -406,13 +403,14 @@ export class GUI
 			}
 			else
 			{
-				const context = buildErrorContext(paramReader);
+				const { getParamReader, buildErrorContext, buildRuntimeErrorMessage, formatErrorContextAsText } = getEasyEyesContext();
+				const context = buildErrorContext(getParamReader());
 
 				if (addErrorToPsychoJS)
 				{
 					try
 					{
-						psychoJS.experiment.addData("error", error + formatErrorContextAsText(context));
+						this._psychoJS.experiment.addData("error", error + formatErrorContextAsText(context));
 					}
 					catch (e)
 					{

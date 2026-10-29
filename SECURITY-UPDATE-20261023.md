@@ -6,9 +6,11 @@ Source: [Node.js October security releases](https://nodejs.org/en/blog/vulnerabi
 
 ## Verification and limitations
 
-All 94 tests pass on Node 24. Existing Pixi patches apply successfully. Standalone build fails because its ES2017/node14 targets encounter top-level await in participant imports. Participant Vite integration compiles successfully.
+Revalidated on 2026-10-29 with Node 24.22.1 / npm 11.19.1. All 95 tests pass and existing Pixi patches apply. The full standalone build now passes (ESM, IIFE, CSS, and JSDoc). The library no longer imports the participant entry point: EasyEyes registers live session state through configureEasyEyes. A context regression verifies later calibration changes and lazy reader initialization. JSDoc excludes test files and fixes invalid Promise type annotations.
 
-Native npm audit: 0 critical, 4 high, 0 moderate, 0 low findings. Counts represent affected dependency packages, not unique CVEs.
+Chromium loaded the standalone IIFE and exposed core.PsychoJS, visual.TextStim, and configureEasyEyes as functions. Expected browser audio autoplay warnings were observed before a user gesture; no library exception occurred. An additional Playwright smoke opened a real PIXI canvas at resolution 0.5, rendered a TextStim, and downloaded calibration JSON using a later change to the registered calibration time; no page exceptions occurred. The browser's favicon request was unrelated to library loading. The current threshold base is integrated in the parent PR. Neither PR is merged.
+
+Native npm audit refreshed on 2026-10-29: 0 critical, 0 high, 0 moderate, 6 low findings. The table below records the historical October 23 findings, which the current registry no longer reports at high severity. Counts represent affected dependency packages, not unique CVEs.
 
 Remaining findings are deferred to a separate compatibility/reachability review by 2026-10-30. High findings are not claimed fixed or harmless. Many are inherited from braces/micromatch, test tooling, development servers, or discontinued packages; runtime exposure must be assessed before release.
 

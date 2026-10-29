@@ -1,0 +1,5 @@
+{
+  "source": {
+    "excludePattern": "(?:^|[\\\\/])__mocks__(?:[\\\\/])|\\.test\\.[jt]s$"
+  }
+}

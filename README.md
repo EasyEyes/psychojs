@@ -71,3 +71,9 @@ The PsychoPy Builder's javascript code generator is built and maintained by the 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
+## EasyEyes host integration
+
+This fork builds ESM and IIFE bundles without importing the participant app. Before using the EasyEyes error dialog, custom window resolution, or calibration JSON download, call `configureEasyEyes(host)` (exported by the package entry point). The participant registers this context before creating its parameter reader.
+
+The host supplies `calibrationTime`, `viewingDistanceCm`, `Screens`, `getParamReader`, `buildErrorContext`, `buildRuntimeErrorMessage`, and `formatErrorContextAsText`. Pass the live state objects and a reader getter so later calibration and reader initialization remain visible. Error recording uses the dialog's own PsychoJS instance. The context is required only when these EasyEyes extensions are used.
