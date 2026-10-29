@@ -11,7 +11,7 @@ import * as XLSX from "xlsx";
 import { MonotonicClock } from "../util/Clock.js";
 import { PsychObject } from "../util/PsychObject.js";
 import * as util from "../util/Util.js";
-import { calibrationTime } from "../../../components/global.js";
+import { getEasyEyesContext } from "../util/EasyEyesContext.js";
 import { excelSafeRows } from "./excelSafe.js";
 
 /**
@@ -480,6 +480,7 @@ export class ExperimentHandler extends PsychObject
 	}
 
 	downloadJSON(data, i) {
+		const { calibrationTime } = getEasyEyesContext();
 		const info = this._psychoJS.experiment.getExtraInfo();
 		const participant = info.participant || "PARTICIPANT";
 		const session = info.session || "SESSION";

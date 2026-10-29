@@ -13,9 +13,7 @@ import { Color } from "../util/Color.js";
 import * as ColorPipeline from "../util/ColorPipeline.js";
 import { PsychObject } from "../util/PsychObject.js";
 import { Logger } from "./Logger.js";
-import { targetEccentricityDeg, viewingDistanceCm } from "../../../components/global.js";
-import { Screens } from "../../../components/multiple-displays/globals.ts";
-import { XYPxOfDeg, XYDegOfPx } from "../../../components/multiple-displays/utils.ts";
+import { getEasyEyesContext } from "../util/EasyEyesContext.js";
 
 /**
  * <p>Window displays the various stimuli of the experiment.</p>
@@ -554,6 +552,7 @@ export class Window extends PsychObject
 		let resolution = window.devicePixelRatio;
 
 		if (this._setResolution > 0) {
+			const { viewingDistanceCm, Screens } = getEasyEyesContext();
 			if (this._setResolutionUnit === "pxPerDeg") {
 				
 				const degPerCm = 10 * (Math.atan(0.1 / viewingDistanceCm.current)) * 180 / Math.PI;
