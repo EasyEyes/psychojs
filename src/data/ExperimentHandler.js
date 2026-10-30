@@ -117,9 +117,26 @@ export class ExperimentHandler extends PsychObject
 		this._trialsKeys = [];
 		this._trialsData = [];
 		this._currentTrialData = {};
+		this._savePreparers = [];
 		this.experimentClock = new MonotonicClock();
 
 		this._experimentEnded = false;
+	}
+
+	/**
+	 * Register synchronous work that must run before every save is serialized.
+	 * Returns an unsubscribe function. Preparation failures are logged and never
+	 * prevent the save itself.
+	 */
+	registerSavePreparation(prepare)
+	{
+		if (typeof prepare !== "function") {
+			throw new TypeError("Save preparation must be a function");
+		}
+		(this._savePreparers ??= []).push(prepare);
+		return () => {
+			this._savePreparers = this._savePreparers.filter(p => p !== prepare);
+		};
 	}
 
 	/**
@@ -293,6 +310,14 @@ export class ExperimentHandler extends PsychObject
 		clear = false
 	} = {})
 	{
+		for (const prepare of this._savePreparers ?? []) {
+			try {
+				prepare(this);
+			} catch (error) {
+				this._psychoJS.logger.warn("Save preparation failed", error);
+			}
+		}
+
 		this._psychoJS.logger.info("[PsychoJS] Save experiment results.");
 
 		this.extraInfo["dataSaved"] = true;
