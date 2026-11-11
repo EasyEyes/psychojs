@@ -10,9 +10,11 @@
 import log4javascript from "log4javascript";
 import { ExperimentHandler } from "../data/ExperimentHandler.js";
 import { MonotonicClock } from "../util/Clock.js";
+import { withErrorStage } from "../util/errorSerialization.js";
 import { Scheduler } from "../util/Scheduler.js";
 import * as util from "../util/Util.js";
 import { EventManager } from "./EventManager.js";
+import { FinalSaveOutcome } from "./FinalSaveOutcome.js";
 import { GUI } from "./GUI.js";
 import { Logger } from "./Logger.js";
 import { ServerManager } from "./ServerManager.js";
@@ -490,11 +492,17 @@ export class PsychoJS
 			cursorTrackingData = [],
 			showSafeToCloseDialog = true,
 			safeTocloseMessage= "Thank you. It's now safe to close this browser tab.",
-			doNotCloseMessage = "<b>Thank you. You're done. DO NOT CLOSE THIS WINDOW.</b> It will close once your data are safely saved. Closing this window will prevent saving of your data, and they will be lost. This may take a few minutes. Thank you for your patience."
+			doNotCloseMessage = "<b>Thank you. You're done. DO NOT CLOSE THIS WINDOW.</b> It will close once your data are safely saved. Closing this window will prevent saving of your data, and they will be lost. This may take a few minutes. Thank you for your patience.",
+			_retryLogOnly = false
 		} = options;
 		console.log("!. PsychoJS.quit()");
 		this.logger.info("[PsychoJS] Quit.");
-		let savingResults = false;
+		let saveStage = null;
+		// Persist across quit() calls: a participant-driven Save retry is a
+		// second attempt on the SAME audit, not a fresh one.
+		const finalSaveOutcome =
+			this._finalSaveOutcome ?? new FinalSaveOutcome(this);
+		this._finalSaveOutcome = finalSaveOutcome;
 
 		try
 		{
@@ -519,12 +527,18 @@ export class PsychoJS
 			{
 				if (!this._serverMsg.has("__noOutput"))
 				{
-					// ! save data to .csv / .db
-					savingResults = true;
-					await this._experiment.save();
-					savingResults = false;
-					// ! save log to .log.gz
+					// The results CSV is required; a log-only retry must not upload it again.
+					if (!_retryLogOnly)
+					{
+						saveStage = "csvUpload";
+						await finalSaveOutcome.begin("csvUpload");
+						await this._experiment.save();
+						await finalSaveOutcome.succeed("csvUpload");
+					}
+					saveStage = "logUpload";
+					await finalSaveOutcome.begin("logUpload");
 					await this._logger.flush();
+					await finalSaveOutcome.succeed("logUpload");
 				}
 			}
 
@@ -549,7 +563,10 @@ export class PsychoJS
 			// close the session:
 			if (this.getEnvironment() === ExperimentHandler.Environment.SERVER)
 			{
+				saveStage = "sessionClose";
+				await finalSaveOutcome.begin("sessionClose");
 				await this._serverManager.closeSession(isCompleted);
+				await finalSaveOutcome.succeed("sessionClose");
 			}
 
 			// thank participant for waiting and either quit or redirect:
@@ -590,21 +607,37 @@ export class PsychoJS
 		}
 		catch (error)
 		{
-			console.error(error);
-			if (isCompleted && savingResults)
+			await finalSaveOutcome.fail(saveStage, error);
+			const stagedError = withErrorStage(error, saveStage);
+			console.error(stagedError);
+			if (isCompleted && saveStage === "csvUpload")
 			{
 				this._gui.dialog({
-					error,
+					error: stagedError,
 					participantMessageKey: "EE_504UploadError",
 					buttonTextKey: "EE_SaveButton",
 					onOK: () => this.quit(options).catch(() => undefined),
 				});
 			}
+			else if (saveStage === "logUpload")
+			{
+				// The CSV is already safe. Retry only the auxiliary log upload,
+				// preserving the completion audit and avoiding a second CSV POST.
+				this._gui.dialog({
+					error: stagedError,
+					participantMessageKey: isCompleted
+						? "EE_504UploadError"
+						: undefined,
+					buttonTextKey: "EE_SaveButton",
+					onOK: () =>
+						this.quit({ ...options, _retryLogOnly: true }).catch(() => undefined),
+				});
+			}
 			else
 			{
-				this._gui.dialog({ error });
+				this._gui.dialog({ error: stagedError });
 			}
-			throw error;
+			throw stagedError;
 		}
 	}
 
