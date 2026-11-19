@@ -659,6 +659,7 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 				ColorPipeline.syncTextColorFilter(
 					this._pixi,
 					this.getContrastedColor(new Color(this._color), this._contrast),
+					this._opacity,
 				);
 			}
 			else if (hasChanged)
@@ -830,12 +831,14 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 			}
 		}
 
-		// Float color pipeline: keep the filter's float color in sync with
-		// the (contrast-adjusted) stim color. Runs on every update so color
-		// and contrast changes are both covered; no-op when inactive.
+		// Float color pipeline: keep the filter's float color and opacity in
+		// sync with the (contrast-adjusted) stim color. Runs on every update
+		// so color, contrast, and opacity changes are all covered; no-op when
+		// inactive.
 		ColorPipeline.syncTextColorFilter(
 			this._pixi,
 			this.getContrastedColor(new Color(this._color), this._contrast),
+			this._opacity,
 		);
 
 		const anchor = this._getAnchor();
@@ -847,7 +850,14 @@ export class TextStim extends util.mix(VisualStim).with(ColorMixin)
 		this._pixi.rotation = -this._ori * Math.PI / 180;
 		this._pixi.position = to_pixiPoint(this.pos, this.units, this.win);
 
-		this._pixi.alpha = this._opacity;
+		// Float color pipeline: the filter above already applied the opacity
+		// at float precision, so the PIXI alpha (8-bit) must stay out of it.
+		// Zero stays zero, so PIXI still skips a fully transparent stim
+		// instead of running its filter pass.
+		this._pixi.alpha =
+			ColorPipeline.floatTextColorActive() && this._opacity > 0
+				? 1
+				: this._opacity;
 		this._pixi.zIndex = this._depth;
 
 		// apply the clip mask:

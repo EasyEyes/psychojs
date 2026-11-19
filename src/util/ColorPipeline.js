@@ -92,6 +92,13 @@ const state = {
 // carry float-precision color for white-rasterized text and the white
 // background quad. Output stays premultiplied (rgb scaled by coverage s.a),
 // matching PIXI's NORMAL blend mode.
+// uAlpha is the stim's opacity as a float. It must travel here rather than
+// through pixiObj.alpha: PIXI packs a sprite's alpha into an 8-bit vertex
+// color, so opacity set that way moves in steps of 1/255 — too coarse for a
+// faint (low-opacity) stimulus, however precise the buffers downstream are.
+// NORMAL blending of this premultiplied output then gives
+//   displayed = uAlpha * uColorRGB + (1 - uAlpha) * background
+// in fully covered pixels.
 // NOTE: PIXI v6 only skips prepending its default (mediump) precision
 // header when the source's FIRST characters are "precision", so both
 // fragment sources below must start exactly that way (highp matters for
@@ -100,10 +107,11 @@ const COLORIZE_FRAG = `precision highp float;
 varying vec2 vTextureCoord;
 uniform sampler2D uSampler;
 uniform vec3 uColorRGB;
+uniform float uAlpha;
 
 void main(void) {
 	vec4 s = texture2D(uSampler, vTextureCoord);
-	gl_FragColor = vec4(uColorRGB, 1.0) * s.a;
+	gl_FragColor = vec4(uColorRGB, 1.0) * (s.a * uAlpha);
 }
 `;
 
@@ -150,9 +158,10 @@ void main(void) {
 export const currentFilterResolution = () =>
 	(state.renderer && state.renderer.resolution) || 1;
 
-const makeColorizeFilter = (rgb = [1, 1, 1]) => {
+const makeColorizeFilter = (rgb = [1, 1, 1], alpha = 1) => {
 	const filter = new PIXI.Filter(undefined, COLORIZE_FRAG, {
 		uColorRGB: new Float32Array(rgb),
+		uAlpha: alpha,
 	});
 	filter.resolution = currentFilterResolution();
 	return filter;
@@ -577,8 +586,11 @@ export const floatTextColorActive = () => state.floatColorActive;
  *
  * @param {PIXI.DisplayObject} pixiObj
  * @param {module:util.Color} color - psychojs Color; .rgb is [0,1] floats
+ * @param {number} [alpha= 1] - the stim's opacity, carried at float
+ *   precision (see COLORIZE_FRAG). A caller that passes it must leave
+ *   pixiObj.alpha at 1, or the opacity is applied twice.
  */
-export const syncTextColorFilter = (pixiObj, color) => {
+export const syncTextColorFilter = (pixiObj, color, alpha = 1) => {
 	if (!pixiObj) return;
 	if (!state.floatColorActive) {
 		if (pixiObj.__eeColorizeFilter) {
@@ -588,15 +600,17 @@ export const syncTextColorFilter = (pixiObj, color) => {
 		return;
 	}
 	const rgb = color.rgb;
+	const a = Number.isFinite(alpha) ? Math.min(1, Math.max(0, alpha)) : 1;
 	let filter = pixiObj.__eeColorizeFilter;
 	if (!filter) {
-		filter = makeColorizeFilter(rgb);
+		filter = makeColorizeFilter(rgb, a);
 		pixiObj.__eeColorizeFilter = filter;
 		pixiObj.filters = [filter];
 	} else {
 		filter.uniforms.uColorRGB[0] = rgb[0];
 		filter.uniforms.uColorRGB[1] = rgb[1];
 		filter.uniforms.uColorRGB[2] = rgb[2];
+		filter.uniforms.uAlpha = a;
 		// Cached filters can outlive a renderer re-creation with a different
 		// resolution (Window.changeResolution) — keep them at the current
 		// renderer's resolution so the filter texture stays pixel-exact.
